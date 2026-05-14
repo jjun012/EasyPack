@@ -1,0 +1,26 @@
+# Spring Boot
+backend/.env
+backend/build/
+backend/.gradle/
+backend/out/
+
+# FastAPI
+ai-server/.env
+ai-server/__pycache__/
+ai-server/*.pyc
+ai-server/venv/
+
+# React Native
+frontend/node_modules/
+frontend/.expo/
+frontend/android/build/
+frontend/ios/Pods/
+frontend/.env
+
+# IntelliJ
+.idea/
+
+# 공통
+.DS_Store
+*.log
+.env
