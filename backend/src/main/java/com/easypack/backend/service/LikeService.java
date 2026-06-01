@@ -5,6 +5,7 @@ import com.easypack.backend.model.Post;
 import com.easypack.backend.repository.LikeRepository;
 import com.easypack.backend.repository.PostRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class LikeService {
@@ -17,6 +18,7 @@ public class LikeService {
         this.postRepository = postRepository;
     }
 
+    @Transactional
     public boolean toggleLike(Long postId, String userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("게시글 없음"));

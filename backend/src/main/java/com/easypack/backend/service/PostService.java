@@ -35,7 +35,7 @@ public class PostService {
         post.setContent(dto.getContent());
         post.setRating(dto.getRating());
         post.setAuthorNickname(user.getNickname());
-        post.setCountry(user.getTravelDestination());
+        post.setCountry(dto.getCountry());
         post.setLikeCount(0);
         return toResponseDTO(postRepository.save(post));
     }
