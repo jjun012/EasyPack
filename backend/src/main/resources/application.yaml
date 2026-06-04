@@ -7,12 +7,6 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-    hikari:
-      connection-init-sql: SET search_path TO public
-      data-source-properties:
-        ssl: true
-        sslmode: require
-        options: project=rktozresjijfertgcqet
   jpa:
     hibernate:
       ddl-auto: update
