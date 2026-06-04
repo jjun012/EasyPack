@@ -34,6 +34,9 @@ public class Post {
     @Column(nullable = false)
     private String country;
 
+    @Column(nullable = false)
+    private String authorNickname;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

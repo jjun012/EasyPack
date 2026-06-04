@@ -1,0 +1,120 @@
+import React, { useState } from 'react';
+import {
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, Alert, ActivityIndicator, ScrollView,
+} from 'react-native';
+import { api } from '../../api/client';
+import { COUNTRIES } from '../../constants/config';
+import { C, shadow } from '../../constants/theme';
+
+export default function EditPostScreen({ route, navigation }) {
+  const { post } = route.params;
+  const [title, setTitle] = useState(post.title);
+  const [content, setContent] = useState(post.content);
+  const [rating, setRating] = useState(post.rating);
+  const [country, setCountry] = useState(post.country);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit() {
+    if (!title.trim() || !content.trim()) {
+      Alert.alert('오류', '제목과 내용을 입력해주세요.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await api.put(`/api/community/post/${post.id}`, { title, content, rating, country });
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert('오류', e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>여행 국가</Text>
+        <View style={styles.pills}>
+          {COUNTRIES.map((c) => (
+            <TouchableOpacity
+              key={c}
+              style={[styles.pill, country === c && styles.pillActive]}
+              onPress={() => setCountry(c)}
+            >
+              <Text style={[styles.pillText, country === c && styles.pillTextActive]}>{c}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>별점</Text>
+        <View style={styles.stars}>
+          {[1, 2, 3, 4, 5].map((s) => (
+            <TouchableOpacity key={s} onPress={() => setRating(s)} style={styles.starBtn}>
+              <Text style={[styles.star, s <= rating && styles.starActive]}>★</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>제목</Text>
+        <TextInput
+          style={styles.input}
+          value={title}
+          onChangeText={setTitle}
+          maxLength={200}
+          placeholderTextColor={C.textMuted}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>내용</Text>
+        <TextInput
+          style={[styles.input, styles.textarea]}
+          value={content}
+          onChangeText={setContent}
+          multiline
+          textAlignVertical="top"
+          placeholderTextColor={C.textMuted}
+        />
+      </View>
+
+      <TouchableOpacity style={styles.btn} onPress={handleSubmit} disabled={loading}>
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>수정 완료</Text>}
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
+  content: { padding: 20, paddingBottom: 48 },
+  section: { backgroundColor: C.surface, borderRadius: 16, padding: 18, marginBottom: 12, ...shadow.sm },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: C.textSec, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pill: {
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 999, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.bg,
+  },
+  pillActive: { backgroundColor: C.primary, borderColor: C.primary },
+  pillText: { fontSize: 14, color: C.textSec, fontWeight: '500' },
+  pillTextActive: { color: '#fff', fontWeight: '700' },
+  stars: { flexDirection: 'row', gap: 6 },
+  starBtn: { padding: 4 },
+  star: { fontSize: 28, color: C.border },
+  starActive: { color: '#F59E0B' },
+  input: {
+    backgroundColor: C.bg, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 13,
+    fontSize: 15, color: C.text, borderWidth: 1.5, borderColor: C.border,
+  },
+  textarea: { height: 180, paddingTop: 13 },
+  btn: {
+    backgroundColor: C.primary, borderRadius: 14,
+    paddingVertical: 17, alignItems: 'center',
+  },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+});
