@@ -55,6 +55,8 @@ export default function CameraScreen({ navigation }) {
       const result = {
         item:        raw.item || raw.name || raw.object || '물품',
         category:    raw.category || raw.verdict || raw.status || '확인 필요',
+        carry_on:    raw.carry_on || raw.carryOn || raw.carry || null,
+        checked:     raw.checked  || raw.checkIn || raw.hold  || null,
         explanation: raw.explanation || raw.description || raw.reason || raw.message || '',
         tags:        raw.tags || raw.labels || [],
         country:     raw.country || '',

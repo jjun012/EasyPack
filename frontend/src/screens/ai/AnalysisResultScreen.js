@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { C, shadow } from '../../constants/theme';
 
 const STATUS_CONFIG = {
@@ -15,12 +16,20 @@ const STATUS_CONFIG = {
   'warn':       { color: C.warn, bg: C.warnSoft, ink: C.warnInk, label: '제한 반입', icon: '!', border: C.warn + '40' },
 };
 
+const SLOT_CONFIG = {
+  '가능':   { color: C.ok,   bg: C.okSoft,   icon: 'check-circle' },
+  '불가':   { color: C.no,   bg: C.noSoft,   icon: 'x-circle' },
+  '조건부': { color: C.warn, bg: C.warnSoft, icon: 'alert-circle' },
+};
+
 export default function AnalysisResultScreen({ route, navigation }) {
   const { result } = route.params;
   const cfg = STATUS_CONFIG[result.category] || {
     color: C.muted, bg: C.bg, ink: C.ink2,
     label: '확인 필요', icon: '?', border: C.line,
   };
+  const carrySlot   = SLOT_CONFIG[result.carry_on] || SLOT_CONFIG['조건부'];
+  const checkedSlot = SLOT_CONFIG[result.checked]  || SLOT_CONFIG['조건부'];
 
   return (
     <View style={styles.container}>
@@ -33,6 +42,20 @@ export default function AnalysisResultScreen({ route, navigation }) {
           </View>
           <Text style={[styles.statusLabel, { color: cfg.color }]}>{cfg.label}</Text>
           <Text style={styles.itemName}>{result.item}</Text>
+        </View>
+
+        {/* 기내 / 위탁 상태 카드 */}
+        <View style={styles.slotsRow}>
+          {[
+            { label: '기내 반입', slot: carrySlot,   value: result.carry_on   || '알 수 없음', icon: 'wind' },
+            { label: '위탁 수하물', slot: checkedSlot, value: result.checked    || '알 수 없음', icon: 'briefcase' },
+          ].map(({ label, slot, value, icon }) => (
+            <View key={label} style={[styles.slotCard, { backgroundColor: slot.bg }]}>
+              <Feather name={slot.icon} size={22} color={slot.color} />
+              <Text style={[styles.slotValue, { color: slot.color }]}>{value}</Text>
+              <Text style={styles.slotLabel}>{label}</Text>
+            </View>
+          ))}
         </View>
 
         {/* Tags */}
@@ -52,25 +75,9 @@ export default function AnalysisResultScreen({ route, navigation }) {
           <Text style={styles.explanation}>{result.explanation}</Text>
         </View>
 
-        {/* Country / airline info */}
-        {result.country && (
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>여행 국가</Text>
-              <Text style={styles.infoValue}>{result.country}</Text>
-            </View>
-            {result.airline && (
-              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-                <Text style={styles.infoLabel}>항공사</Text>
-                <Text style={styles.infoValue}>{result.airline}</Text>
-              </View>
-            )}
-          </View>
-        )}
-
         {/* AI disclaimer */}
         <View style={styles.disclaimerCard}>
-          <Text style={styles.disclaimerIcon}>ℹ</Text>
+          <Feather name="info" size={14} color={C.warnInk} style={{ marginTop: 1 }} />
           <Text style={styles.disclaimerText}>
             AI 분석 결과는 참고용입니다. 정확한 정보는 항공사 또는 공항 안내를 확인하세요.
           </Text>
@@ -113,6 +120,15 @@ const styles = StyleSheet.create({
   statusLabel: { fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 },
   itemName: { fontSize: 28, fontWeight: '800', color: C.ink, letterSpacing: -0.5 },
 
+  /* Carry-on / Checked slots */
+  slotsRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  slotCard: {
+    flex: 1, borderRadius: 18, padding: 16,
+    alignItems: 'center', gap: 6,
+  },
+  slotValue: { fontSize: 17, fontWeight: '800' },
+  slotLabel: { fontSize: 12, fontWeight: '600', color: C.muted },
+
   /* Tags */
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   tagBadge: {
@@ -147,7 +163,6 @@ const styles = StyleSheet.create({
     backgroundColor: C.warnSoft, borderRadius: 14, padding: 14,
     borderWidth: 1, borderColor: C.warn + '30',
   },
-  disclaimerIcon: { fontSize: 14, color: C.warnInk, fontWeight: '700', marginTop: 1 },
   disclaimerText: { flex: 1, fontSize: 13, color: C.warnInk, lineHeight: 19 },
 
   /* Actions */

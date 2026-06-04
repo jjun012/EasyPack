@@ -31,7 +31,17 @@ export default function TextAnalysisScreen({ navigation }) {
           airline: user?.airline || '대한항공',
         }),
       });
-      const result = await res.json();
+      const raw = await res.json();
+      const result = {
+        item:        raw.item || raw.name || item.trim(),
+        category:    raw.category || raw.verdict || '확인 필요',
+        carry_on:    raw.carry_on || null,
+        checked:     raw.checked  || null,
+        explanation: raw.explanation || raw.description || '',
+        tags:        raw.tags || [],
+        country:     raw.country || '',
+        airline:     raw.airline || '',
+      };
       navigation.navigate('AnalysisResult', { result });
     } catch (e) {
       Alert.alert('분석 실패', '다시 시도해주세요.');

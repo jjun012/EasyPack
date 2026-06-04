@@ -49,7 +49,10 @@ def query_regulation(item: str, country: str, airline: str) -> dict | None:
         cur.close()
         conn.close()
         if row:
-            return {"item": row[0], "category": row[1], "explanation": row[2]}
+            cat = row[1]
+            carry = "불가" if cat == "반입불가" else ("조건부" if cat == "제한적반입" else "가능")
+            chk   = "불가" if cat == "반입불가" else "가능"
+            return {"item": row[0], "category": cat, "carry_on": carry, "checked": chk, "tags": [], "explanation": row[2]}
     except Exception:
         pass
     return None
@@ -109,23 +112,32 @@ REGULATION_CONTEXT = """
 def get_regulation_from_gemini(item: str, country: str, airline: str) -> dict:
     prompt = (
         f"{REGULATION_CONTEXT}\n\n"
-        f"위 규정을 참고해서 '{item}'을(를) {country} 여행 시 {airline} 항공기에 가져갈 수 있는지 판단해줘. "
-        "반드시 아래 형식으로만 답해줘:\n"
+        f"위 규정을 참고해서 '{item}'을(를) {country} 여행 시 {airline} 항공기에 가져갈 수 있는지 판단해줘.\n"
+        "반드시 아래 5줄 형식으로만 답해줘. 다른 말은 절대 하지 마:\n"
         "category: 반입가능 또는 반입불가 또는 제한적반입\n"
-        "explanation: 구체적인 조건과 주의사항 포함해서 2~3문장으로 설명"
+        "carry_on: 가능 또는 불가 또는 조건부\n"
+        "checked: 가능 또는 불가 또는 조건부\n"
+        "tags: 쉼표로 구분한 키워드 1~3개 (예: 배터리,위험물)\n"
+        "explanation: 한 문장으로 핵심 조건만 간단히"
     )
     response = model.generate_content(prompt)
     text = response.text.strip()
 
-    category = "알 수 없음"
-    explanation = text
+    fields = {"category": "알 수 없음", "carry_on": "알 수 없음", "checked": "알 수 없음", "tags": "", "explanation": text}
     for line in text.splitlines():
-        if line.startswith("category:"):
-            category = line.replace("category:", "").strip()
-        elif line.startswith("explanation:"):
-            explanation = line.replace("explanation:", "").strip()
+        for key in fields:
+            if line.startswith(f"{key}:"):
+                fields[key] = line[len(key)+1:].strip()
 
-    return {"item": item, "category": category, "explanation": explanation}
+    tags = [t.strip() for t in fields["tags"].split(",") if t.strip()]
+    return {
+        "item":        item,
+        "category":    fields["category"],
+        "carry_on":    fields["carry_on"],
+        "checked":     fields["checked"],
+        "tags":        tags,
+        "explanation": fields["explanation"],
+    }
 
 
 class ImageRequest(BaseModel):
