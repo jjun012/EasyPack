@@ -96,14 +96,16 @@ function CustomTabBar({ state, descriptors, navigation }) {
         </BlurView>
       </View>
 
-      {/* FAB — lives OUTSIDE pillShell so it's never clipped */}
-      <View
-        style={tabStyles.fabWrap}
-        accessible accessibilityRole="button" accessibilityLabel="물품 촬영"
-        onStartShouldSetResponder={() => true}
-        onResponderGrant={() => press(fabRoute, fabFocused)}
-      >
-        <View style={tabStyles.fab}>
+      {/* FAB — lives OUTSIDE pillShell so it's never clipped.
+          pointerEvents="box-none" makes the wrapper transparent to touches;
+          only the inner circle captures taps. */}
+      <View style={tabStyles.fabWrap} pointerEvents="box-none">
+        <View
+          style={tabStyles.fab}
+          accessible accessibilityRole="button" accessibilityLabel="물품 촬영"
+          onStartShouldSetResponder={() => true}
+          onResponderGrant={() => press(fabRoute, fabFocused)}
+        >
           <Feather name="maximize" size={24} color="#fff" />
         </View>
       </View>
