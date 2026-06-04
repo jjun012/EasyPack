@@ -56,7 +56,8 @@ def query_regulation(item: str, country: str, airline: str) -> dict | None:
 
 
 def identify_item_from_image(image_b64: str) -> str:
-    image_data = {"mime_type": "image/jpeg", "data": image_b64}
+    image_bytes = base64.b64decode(image_b64)
+    image_data = {"mime_type": "image/jpeg", "data": image_bytes}
     prompt = (
         "이 이미지에서 물품을 하나 인식해서 한국어로 짧게 물품명만 답해줘. "
         "예시: 보조배터리, 손톱깎이, 라이터, 노트북. "
