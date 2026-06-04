@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../api/client';
 import { COUNTRIES } from '../../constants/config';
 import { C, shadow, COUNTRY_DATA } from '../../constants/theme';
@@ -15,6 +16,7 @@ function avatarHue(name) {
 }
 
 export default function CommunityScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [popularPosts, setPopularPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +41,7 @@ export default function CommunityScreen({ navigation }) {
       contentContainerStyle={{ paddingBottom: 110 }}
     >
       {/* ── Header ── */}
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 14 }]}>
         <View style={{ gap: 2 }}>
           <Text style={s.headerTitle}>커뮤니티</Text>
           <Text style={s.headerSub}>여행자들의 생생한 수하물 후기</Text>
@@ -152,7 +154,7 @@ const s = StyleSheet.create({
   /* Header */
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 18, paddingTop: 56, paddingBottom: 14,
+    paddingHorizontal: 18, paddingBottom: 14,
   },
   headerTitle: { fontSize: 30, fontWeight: '800', color: C.ink, letterSpacing: -0.6 },
   headerSub:   { fontSize: 13, color: C.muted, fontWeight: '500' },

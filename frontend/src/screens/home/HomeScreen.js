@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, ActivityIndicator, StatusBar,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -42,12 +44,13 @@ function weatherLabel(code) {
 }
 
 export default function HomeScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [user, setUser]               = useState(null);
   const [popularPosts, setPopularPosts] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [weather, setWeather]         = useState(null);
 
-  useEffect(() => { loadData(); }, []);
+  useFocusEffect(useCallback(() => { loadData(); }, []));
 
   async function loadData() {
     try {
@@ -109,7 +112,7 @@ export default function HomeScreen({ navigation }) {
       <StatusBar barStyle="dark-content" />
 
       {/* ── Header ── */}
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 12 }]}>
         {/* EasyPack logo */}
         <View style={s.logo}>
           <View style={s.logoMark}>
@@ -331,7 +334,7 @@ const s = StyleSheet.create({
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 18,
-    paddingTop: 56, paddingBottom: 16,
+    paddingBottom: 16,
     backgroundColor: C.bg,
   },
   logo: { flexDirection: 'row', alignItems: 'center', gap: 9 },

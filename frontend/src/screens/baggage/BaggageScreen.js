@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, shadow } from '../../constants/theme';
 
 if (Platform.OS === 'android') {
@@ -66,6 +67,7 @@ const V_COLOR = {
 };
 
 export default function BaggageScreen() {
+  const insets = useSafeAreaInsets();
   const [airline, setAirline]     = useState('대한항공');
   const [pageIndex, setPageIndex] = useState(0);
   const [openIdx, setOpenIdx]     = useState(-1);
@@ -104,7 +106,7 @@ export default function BaggageScreen() {
   return (
     <View style={s.screen}>
       {/* ── Header ── */}
-      <View style={s.header}>
+      <View style={[s.header, { paddingTop: insets.top + 12 }]}>
         <View>
           <Text style={s.headerTitle}>수하물 정보</Text>
           <Text style={s.headerSub}>항공 반입 규정 한눈에 보기</Text>
@@ -293,7 +295,7 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.bg },
 
   header: {
-    paddingTop: 56, paddingHorizontal: 18, paddingBottom: 12,
+    paddingHorizontal: 18, paddingBottom: 12,
   },
   headerTitle: { fontSize: 30, fontWeight: '800', color: C.ink, letterSpacing: -0.6 },
   headerSub:   { fontSize: 13, color: C.muted, fontWeight: '500', marginTop: 2 },

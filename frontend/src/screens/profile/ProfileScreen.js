@@ -26,7 +26,14 @@ export default function ProfileScreen({ navigation }) {
       setUser(data);
       setForm({ nickname: data.nickname, travelDestination: data.travelDestination, airline: data.airline });
       await AsyncStorage.setItem('user', JSON.stringify(data));
-    } catch (e) {}
+    } catch (e) {
+      const cached = await AsyncStorage.getItem('user');
+      if (cached) {
+        const data = JSON.parse(cached);
+        setUser(data);
+        setForm({ nickname: data.nickname, travelDestination: data.travelDestination, airline: data.airline });
+      }
+    }
   }
 
   async function handleUpdate() {
