@@ -34,94 +34,80 @@ const TABS = [
   { name: 'Profile',   icon: 'user',           label: '내 정보' },
 ];
 
-function TabIcon({ name, focused }) {
-  const cfg = TABS.find((t) => t.name === name) || {};
-
-  if (cfg.fab) {
-    return (
-      <View style={tabStyles.fab}>
-        <Feather name="maximize" size={24} color="#fff" />
-      </View>
-    );
-  }
-
-  return (
-    <View style={tabStyles.iconWrap}>
-      <Feather
-        name={cfg.icon}
-        size={22}
-        color={focused ? C.brand : '#9AA4B8'}
-        strokeWidth={focused ? 2.2 : 1.8}
-      />
-    </View>
-  );
-}
-
-function TabLabel({ name, focused }) {
-  const cfg = TABS.find((t) => t.name === name) || {};
-  if (!cfg.label) return null;
-  return (
-    <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>
-      {cfg.label}
-    </Text>
-  );
-}
 
 /* ── Custom frosted-glass tab bar ─────────────── */
 function CustomTabBar({ state, descriptors, navigation }) {
+  const press = (route, focused) => {
+    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+  };
+
+  const leftRoutes  = state.routes.slice(0, 2);
+  const fabRoute    = state.routes[2];
+  const rightRoutes = state.routes.slice(3, 5);
+  const fabFocused  = state.index === 2;
+
   return (
-    <View style={tabStyles.barWrap} pointerEvents="box-none">
-      <BlurView intensity={60} tint="light" style={tabStyles.bar}>
-        {state.routes.map((route, index) => {
-          const cfg     = TABS.find((t) => t.name === route.name) || {};
-          const focused = state.index === index;
-          const { options } = descriptors[route.key];
+    /* Outer wrap — NO overflow:hidden so FAB isn't clipped */
+    <View style={tabStyles.outerWrap} pointerEvents="box-none">
 
-          const onPress = () => {
-            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
-          };
-
-          if (cfg.fab) {
+      {/* Pill bar (blur + border) — overflow:hidden only here */}
+      <View style={tabStyles.pillShell}>
+        <BlurView intensity={55} tint="light" style={tabStyles.pillInner}>
+          {/* Left 2 tabs */}
+          {leftRoutes.map((route, i) => {
+            const cfg     = TABS.find((t) => t.name === route.name) || {};
+            const focused = state.index === i;
             return (
-              <View key={route.key} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                <View
-                  style={tabStyles.fab}
-                  accessible
-                  accessibilityRole="button"
-                  accessibilityLabel="물품 촬영"
-                  onStartShouldSetResponder={() => true}
-                  onResponderGrant={onPress}
-                >
-                  <Feather name="maximize" size={24} color="#fff" />
-                </View>
+              <View
+                key={route.key}
+                style={tabStyles.tab}
+                accessible accessibilityRole="button"
+                onStartShouldSetResponder={() => true}
+                onResponderGrant={() => press(route, focused)}
+              >
+                <Feather name={cfg.icon} size={22} color={focused ? C.brand : '#9AA4B8'} />
+                <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>{cfg.label}</Text>
               </View>
             );
-          }
+          })}
 
-          return (
-            <View
-              key={route.key}
-              style={tabStyles.tab}
-              accessible
-              accessibilityRole="button"
-              onStartShouldSetResponder={() => true}
-              onResponderGrant={onPress}
-            >
-              <Feather
-                name={cfg.icon}
-                size={22}
-                color={focused ? C.brand : '#9AA4B8'}
-              />
-              {cfg.label && (
-                <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>
-                  {cfg.label}
-                </Text>
-              )}
-            </View>
-          );
-        })}
-      </BlurView>
+          {/* Centre spacer for FAB */}
+          <View style={{ flex: 1 }} />
+
+          {/* Right 2 tabs */}
+          {rightRoutes.map((route, i) => {
+            const idx     = i + 3;
+            const cfg     = TABS.find((t) => t.name === route.name) || {};
+            const focused = state.index === idx;
+            return (
+              <View
+                key={route.key}
+                style={tabStyles.tab}
+                accessible accessibilityRole="button"
+                onStartShouldSetResponder={() => true}
+                onResponderGrant={() => press(route, focused)}
+              >
+                <Feather name={cfg.icon} size={22} color={focused ? C.brand : '#9AA4B8'} />
+                <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>{cfg.label}</Text>
+              </View>
+            );
+          })}
+        </BlurView>
+      </View>
+
+      {/* FAB — lives OUTSIDE pillShell so it's never clipped */}
+      <View
+        style={tabStyles.fabWrap}
+        accessible accessibilityRole="button" accessibilityLabel="물품 촬영"
+        onStartShouldSetResponder={() => true}
+        onResponderGrant={() => press(fabRoute, fabFocused)}
+      >
+        <View style={tabStyles.fab}>
+          <Feather name="maximize" size={24} color="#fff" />
+        </View>
+      </View>
+
     </View>
   );
 }
@@ -243,54 +229,69 @@ function AuthStack() {
 }
 
 /* ── Styles ──────────────────────────────────── */
+const BAR_HEIGHT  = 64;
+const FAB_SIZE    = 54;
+const FAB_OVERHANG = 22;   // how far FAB pops above the bar
+const OUTER_H     = BAR_HEIGHT + FAB_OVERHANG;
+
 const tabStyles = StyleSheet.create({
-  /* floating pill container */
-  barWrap: {
+  /* Outer wrapper — no overflow so FAB is never clipped */
+  outerWrap: {
     position: 'absolute',
     left: 12, right: 12,
     bottom: Platform.OS === 'ios' ? 20 : 14,
-    height: 64,
+    height: OUTER_H,
+  },
+
+  /* Pill background + border — overflow hidden only here */
+  pillShell: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    height: BAR_HEIGHT,
     borderRadius: 999,
     overflow: 'hidden',
-    /* inner highlight ring */
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.65)',
     shadowColor: '#0E1A33',
     shadowOpacity: 0.18,
-    shadowRadius: 20,
+    shadowRadius: 22,
     shadowOffset: { width: 0, height: 8 },
     elevation: 10,
   },
-  bar: {
+  pillInner: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : 'transparent',
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.96)' : 'transparent',
   },
 
-  /* regular tab */
+  /* Regular tab */
   tab: {
     flex: 1,
-    height: '100%',
+    height: BAR_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 3,
   },
-  iconWrap: { alignItems: 'center', justifyContent: 'center' },
   label: {
     fontSize: 10.5, fontWeight: '700', color: '#9AA4B8', letterSpacing: -0.1,
   },
   labelActive: { color: C.brand },
 
-  /* FAB (camera) */
+  /* FAB wrapper — sits at top-centre of outerWrap, outside pillShell */
+  fabWrap: {
+    position: 'absolute',
+    top: 0,
+    left: 0, right: 0,
+    alignItems: 'center',
+  },
   fab: {
-    width: 54, height: 54, borderRadius: 999,
+    width: FAB_SIZE, height: FAB_SIZE, borderRadius: 999,
     backgroundColor: C.brand,
     alignItems: 'center', justifyContent: 'center',
-    marginTop: -22,
     shadowColor: C.brand,
-    shadowOpacity: 0.38,
+    shadowOpacity: 0.40,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
