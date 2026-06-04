@@ -4,7 +4,7 @@ import {
   TouchableOpacity, ActivityIndicator, StatusBar,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -44,7 +44,6 @@ function weatherLabel(code) {
 }
 
 export default function HomeScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const [user, setUser]               = useState(null);
   const [popularPosts, setPopularPosts] = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -108,11 +107,12 @@ export default function HomeScreen({ navigation }) {
   ];
 
   return (
-    <ScrollView style={s.container} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={s.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" />
+      <ScrollView style={s.container} showsVerticalScrollIndicator={false}>
 
       {/* ── Header ── */}
-      <View style={[s.header, { paddingTop: insets.top + 12 }]}>
+      <View style={s.header}>
         {/* EasyPack logo */}
         <View style={s.logo}>
           <View style={s.logoMark}>
@@ -322,11 +322,13 @@ export default function HomeScreen({ navigation }) {
       )}
 
       <View style={{ height: 110 }} />
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: C.bg },
   container: { flex: 1, backgroundColor: C.bg },
   px:        { paddingHorizontal: 18 },
 
@@ -334,7 +336,7 @@ const s = StyleSheet.create({
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 18,
-    paddingBottom: 16,
+    paddingTop: 16, paddingBottom: 16,
     backgroundColor: C.bg,
   },
   logo: { flexDirection: 'row', alignItems: 'center', gap: 9 },

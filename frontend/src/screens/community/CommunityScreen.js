@@ -4,7 +4,7 @@ import {
   StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../../api/client';
 import { COUNTRIES } from '../../constants/config';
 import { C, shadow, COUNTRY_DATA } from '../../constants/theme';
@@ -16,7 +16,6 @@ function avatarHue(name) {
 }
 
 export default function CommunityScreen({ navigation }) {
-  const insets = useSafeAreaInsets();
   const [popularPosts, setPopularPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,13 +34,14 @@ export default function CommunityScreen({ navigation }) {
   if (loading) return <ActivityIndicator style={{ flex: 1 }} color={C.brand} />;
 
   return (
-    <ScrollView
-      style={s.container}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 110 }}
-    >
+    <SafeAreaView style={s.safeArea} edges={['top']}>
+      <ScrollView
+        style={s.container}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 110 }}
+      >
       {/* ── Header ── */}
-      <View style={[s.header, { paddingTop: insets.top + 14 }]}>
+      <View style={s.header}>
         <View style={{ gap: 2 }}>
           <Text style={s.headerTitle}>커뮤니티</Text>
           <Text style={s.headerSub}>여행자들의 생생한 수하물 후기</Text>
@@ -144,17 +144,19 @@ export default function CommunityScreen({ navigation }) {
           })}
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
+  safeArea:  { flex: 1, backgroundColor: C.bg },
   container: { flex: 1, backgroundColor: C.bg },
 
   /* Header */
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 18, paddingBottom: 14,
+    paddingHorizontal: 18, paddingTop: 16, paddingBottom: 14,
   },
   headerTitle: { fontSize: 30, fontWeight: '800', color: C.ink, letterSpacing: -0.6 },
   headerSub:   { fontSize: 13, color: C.muted, fontWeight: '500' },
