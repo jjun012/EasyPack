@@ -3,15 +3,19 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, ActivityIndicator, StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../api/client';
 import { C, shadow, CITY_DATA, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
 
 const QUICK_MENUS = [
-  { label: '물품 촬영', sub: 'AI 카메라', screen: 'Camera',    iconBg: C.brandSoft,       icon: '📸' },
-  { label: '여행 후기', sub: '커뮤니티',  screen: 'Community', iconBg: '#EDE9FE',          icon: '✈️' },
-  { label: '수하물',   sub: '규정·요금', screen: 'Baggage',   iconBg: C.accentSoft,       icon: '🧳' },
+  { label: '물품 촬영', desc: 'AI로 반입 확인',   screen: 'Camera',    bg: C.brandSoft,  ink: C.brandInk,  icon: '⬡' },
+  { label: '커뮤니티', desc: '나라별 여행 후기',  screen: 'Community', bg: C.accentSoft, ink: C.accentInk, icon: '✈' },
+  { label: '수하물 정보', desc: '반입 규정 안내', screen: 'Baggage',   bg: C.okSoft,     ink: C.okInk,     icon: '🧳' },
 ];
+
+const BAGGAGE_CARRY = { '대한항공': 12, '아시아나항공': 10, '제주항공': 10, '티웨이항공': 10, '진에어항공': 12 };
+const BAGGAGE_HOLD  = { '대한항공': 23, '아시아나항공': 23, '제주항공': 15, '티웨이항공': 15, '진에어항공': 15 };
 
 function weatherInfo(code) {
   const c = Number(code);
@@ -20,7 +24,7 @@ function weatherInfo(code) {
   if (c <= 122) return { emoji: '☁️', label: '흐림' };
   if (c === 143 || c === 248 || c === 260) return { emoji: '🌫️', label: '안개' };
   if (c === 200 || c >= 386) return { emoji: '⛈️', label: '천둥번개' };
-  if ([179, 182, 185, 227, 230, 317, 320, 323, 326, 329, 332, 335, 338, 350, 368, 371, 374, 377].includes(c))
+  if ([179,182,185,227,230,317,320,323,326,329,332,335,338,350,368,371,374,377].includes(c))
     return { emoji: '🌨️', label: '눈' };
   return { emoji: '🌧️', label: '비' };
 }
@@ -53,9 +57,15 @@ export default function HomeScreen({ navigation }) {
       const res = await fetch(`https://wttr.in/${encodeURIComponent(wttrName)}?format=j1`);
       const json = await res.json();
       const cur = json.current_condition?.[0];
+      const today = json.weather?.[0];
       if (cur) {
         setWeather({
           temp: cur.temp_C,
+          hi: today?.maxtempC || cur.temp_C,
+          lo: today?.mintempC || cur.temp_C,
+          rain: today?.hourly?.[4]?.chanceofrain || '0',
+          hum: cur.humidity,
+          wind: Math.round((Number(cur.windspeedKmph) || 0) / 3.6),
           ...weatherInfo(cur.weatherCode),
         });
       }
@@ -68,126 +78,152 @@ export default function HomeScreen({ navigation }) {
   const cityInfo = CITY_DATA[dest] || {};
   const countryInfo = COUNTRY_DATA[cityInfo.country] || {};
   const airlineInfo = AIRLINE_DATA[user?.airline] || {};
-  const heroBg = countryInfo.bg || C.ink;
+  const heroGrad = countryInfo.grad || [C.ink, '#1a2c54'];
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <StatusBar barStyle="light-content" />
 
       {/* ── Hero destination card ── */}
-      <View style={[styles.hero, { backgroundColor: heroBg }]}>
-        <View style={styles.heroTop}>
-          {/* Route badges */}
-          <View style={styles.routeRow}>
-            <View style={styles.routeBadge}>
+      <View style={styles.heroCard}>
+        <LinearGradient colors={heroGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroImg}>
+          {/* dark overlay */}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.18)', 'transparent', 'rgba(0,0,0,0.50)']}
+            style={StyleSheet.absoluteFill}
+          />
+
+          {/* top row: route badge + weather */}
+          <View style={styles.heroTopRow}>
+            <View style={styles.routePill}>
               <Text style={styles.routeCode}>ICN</Text>
-            </View>
-            <Text style={styles.routeArrow}>→</Text>
-            <View style={styles.routeBadge}>
+              <Text style={styles.routePlane}>✈</Text>
               <Text style={styles.routeCode}>{cityInfo.countryCode || countryInfo.code || '??'}</Text>
             </View>
-          </View>
-          {/* Airline badge */}
-          {user?.airline && (
-            <View style={styles.airlinePill}>
-              <View style={[styles.airlineCodeDot, { backgroundColor: airlineInfo.color || C.brand }]}>
-                <Text style={styles.airlineCodeDotText}>{airlineInfo.code || 'KE'}</Text>
+            {weather && (
+              <View style={styles.weatherPill}>
+                <Text style={styles.weatherPillEmoji}>{weather.emoji}</Text>
+                <Text style={styles.weatherPillTemp}>{weather.temp}°</Text>
               </View>
-              <Text style={styles.airlinePillText}>{user.airline}</Text>
-            </View>
-          )}
-        </View>
+            )}
+          </View>
 
-        <Text style={styles.heroCity}>{dest || '여행지'}</Text>
-        <View style={styles.heroBottom}>
-          <Text style={styles.heroGreeting}>안녕하세요, {user?.nickname || '여행자'}님</Text>
-          {weather && (
-            <View style={styles.weatherPill}>
-              <Text style={styles.weatherEmoji}>{weather.emoji}</Text>
-              <Text style={styles.weatherTemp}>{weather.temp}°C</Text>
-              <Text style={styles.weatherLabel}>{weather.label}</Text>
-            </View>
-          )}
-        </View>
+          {/* bottom: city info */}
+          <View style={styles.heroBottom}>
+            <Text style={styles.heroNextTrip}>
+              NEXT TRIP · {(cityInfo.country || '').toUpperCase()}
+            </Text>
+            <Text style={styles.heroCity}>{dest || '여행지'}</Text>
+            {weather && (
+              <Text style={styles.heroSub}>
+                {countryInfo.emoji || ''} · {weather.label} {weather.lo}°/{weather.hi}°
+              </Text>
+            )}
+          </View>
+        </LinearGradient>
+
+        {/* weather strip */}
+        {weather && (
+          <View style={styles.weatherStrip}>
+            {[
+              { label: '강수', value: `${weather.rain}%` },
+              { label: '습도', value: `${weather.hum}%` },
+              { label: '바람', value: `${weather.wind}m/s` },
+            ].map(({ label, value }, i) => (
+              <View key={label} style={[styles.weatherCell, i > 0 && styles.weatherCellBorder]}>
+                <Text style={styles.weatherValue}>{value}</Text>
+                <Text style={styles.weatherLabel}>{label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
 
       <View style={styles.body}>
-
-        {/* ── Quick menus (3 in a row) ── */}
-        <Text style={styles.sectionLabel}>바로가기</Text>
+        {/* ── Quick menus ── */}
+        <Text style={styles.sectionLabel}>무엇을 도와드릴까요?</Text>
         <View style={styles.quickRow}>
-          {QUICK_MENUS.map(({ label, sub, screen, iconBg, icon }) => (
+          {QUICK_MENUS.map(({ label, desc, screen, bg, ink, icon }) => (
             <TouchableOpacity
               key={screen}
               style={styles.quickCard}
               onPress={() => navigation.navigate(screen)}
               activeOpacity={0.75}
             >
-              <View style={[styles.quickIcon, { backgroundColor: iconBg }]}>
-                <Text style={styles.quickEmoji}>{icon}</Text>
+              <View style={[styles.quickIcon, { backgroundColor: bg }]}>
+                <Text style={[styles.quickEmoji, { color: ink }]}>{icon}</Text>
               </View>
               <Text style={styles.quickLabel}>{label}</Text>
-              <Text style={styles.quickSub}>{sub}</Text>
+              <Text style={styles.quickDesc}>{desc}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* ── Airline dark banner ── */}
+        {/* ── Airline banner ── */}
         {user?.airline && (
-          <View style={styles.airlineBanner}>
-            <View style={styles.airlineBannerLeft}>
-              <View style={[styles.airlineBannerCode, { backgroundColor: airlineInfo.color || C.brand }]}>
-                <Text style={styles.airlineBannerCodeText}>{airlineInfo.code || 'KE'}</Text>
-              </View>
-              <View>
-                <Text style={styles.airlineBannerName}>{user.airline}</Text>
-                <Text style={styles.airlineBannerSub}>이용 중인 항공사</Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={styles.airlineBannerBtn}
-              onPress={() => navigation.navigate('Baggage')}
+          <TouchableOpacity
+            style={styles.airlineBanner}
+            onPress={() => navigation.navigate('Baggage')}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={[C.ink, '#1a2c54']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={styles.airlineBannerGrad}
             >
-              <Text style={styles.airlineBannerBtnText}>수하물 확인</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={styles.airlineBannerLeft}>
+                <View style={[styles.airlineMark, { backgroundColor: airlineInfo.color || C.brand }]}>
+                  <Text style={styles.airlineMarkText}>{airlineInfo.code || 'KE'}</Text>
+                </View>
+                <View>
+                  <Text style={styles.airlineBannerEyebrow}>MY AIRLINE</Text>
+                  <Text style={styles.airlineBannerName}>{user.airline} 수하물 규정</Text>
+                  <Text style={styles.airlineBannerSub}>
+                    위탁 {BAGGAGE_HOLD[user.airline] || 23}kg · 기내 {BAGGAGE_CARRY[user.airline] || 12}kg · 초과요금 계산
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.airlineBannerArrow}>
+                <Text style={styles.airlineBannerArrowText}>›</Text>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
         )}
 
         {/* ── Popular posts ── */}
         {popularPosts.length > 0 && (
           <>
-            <Text style={styles.sectionLabel}>인기 게시글</Text>
-            {popularPosts.map((post) => {
-              const cd = COUNTRY_DATA[post.country] || {};
-              return (
-                <TouchableOpacity
-                  key={post.id}
-                  style={styles.postCard}
-                  onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.postTop}>
-                    <View style={[styles.countryChip, { backgroundColor: cd.tint || C.brandSoft }]}>
-                      <Text style={[styles.countryChipCode, { color: cd.ink || C.brand }]}>
-                        {cd.code || post.country?.slice(0, 2).toUpperCase()}
-                      </Text>
-                      <Text style={[styles.countryChipName, { color: cd.ink || C.brand }]}>
-                        {post.country}
-                      </Text>
-                    </View>
-                    <Text style={styles.postRating}>{'★'.repeat(post.rating)}</Text>
-                  </View>
-                  <Text style={styles.postTitle} numberOfLines={1}>{post.title}</Text>
-                  <View style={styles.postMeta}>
-                    <Text style={styles.postMetaText}>♥ {post.likeCount}</Text>
-                    <Text style={styles.postMetaDot}>·</Text>
-                    <Text style={styles.postMetaText}>댓글 {post.commentCount}</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+            <Text style={[styles.sectionLabel, { marginTop: 22 }]}>지금 뜨는 여행기</Text>
+            <View style={styles.popularCard}>
+              {popularPosts.slice(0, 3).map((post, i) => {
+                const cd = COUNTRY_DATA[post.country] || {};
+                return (
+                  <React.Fragment key={post.id}>
+                    {i > 0 && <View style={styles.divider} />}
+                    <TouchableOpacity
+                      style={styles.popularRow}
+                      onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
+                      activeOpacity={0.75}
+                    >
+                      <View style={[styles.flagChip, { backgroundColor: cd.tint || C.brandSoft }]}>
+                        <Text style={[styles.flagCode, { color: cd.ink || C.brand }]}>{cd.code || '?'}</Text>
+                      </View>
+                      <View style={styles.popularMeta}>
+                        <Text style={styles.popularTitle} numberOfLines={1}>{post.title}</Text>
+                        <View style={styles.popularBottom}>
+                          <Text style={styles.popularAuthor}>{post.authorNickname}</Text>
+                          <Text style={styles.popularLike}>♥ {post.likeCount}</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                );
+              })}
+            </View>
           </>
         )}
+
+        <View style={{ height: 100 }} />
       </View>
     </ScrollView>
   );
@@ -197,98 +233,72 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
 
   /* Hero */
-  hero: {
-    paddingTop: 56, paddingHorizontal: 24, paddingBottom: 32,
+  heroCard: { backgroundColor: C.surface, ...shadow.md, marginBottom: 0 },
+  heroImg: { height: 224, justifyContent: 'space-between', padding: 18 },
+
+  heroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  routePill: {
+    flexDirection: 'row', alignItems: 'center', gap: 7,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: 999, paddingHorizontal: 13, paddingVertical: 7,
   },
-  heroTop: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 20,
-  },
-  routeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  routeBadge: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4,
-  },
-  routeCode: { color: '#fff', fontSize: 13, fontWeight: '800', letterSpacing: 1 },
-  routeArrow: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '600' },
-  airlinePill: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.22)',
-    borderRadius: 999, paddingRight: 12, paddingVertical: 4, paddingLeft: 4,
-  },
-  airlineCodeDot: {
-    borderRadius: 999, paddingHorizontal: 7, paddingVertical: 3,
-  },
-  airlineCodeDotText: { color: '#fff', fontSize: 10, fontWeight: '800' },
-  airlinePillText: { color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: '600' },
-  heroCity: { fontSize: 36, fontWeight: '900', color: '#fff', letterSpacing: -1, marginBottom: 8 },
-  heroBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  heroGreeting: { fontSize: 14, color: 'rgba(255,255,255,0.65)' },
+  routeCode: { color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: 1 },
+  routePlane: { color: '#fff', fontSize: 13 },
   weatherPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: 'rgba(0,0,0,0.22)',
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6,
   },
-  weatherEmoji: { fontSize: 14 },
-  weatherTemp: { fontSize: 14, fontWeight: '800', color: '#fff' },
-  weatherLabel: { fontSize: 12, color: 'rgba(255,255,255,0.75)' },
+  weatherPillEmoji: { fontSize: 15 },
+  weatherPillTemp: { color: '#fff', fontSize: 14, fontWeight: '800' },
+
+  heroBottom: {},
+  heroNextTrip: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.82)', letterSpacing: 2, marginBottom: 3 },
+  heroCity: { fontSize: 30, fontWeight: '800', color: '#fff', letterSpacing: -0.5, lineHeight: 34 },
+  heroSub: { fontSize: 12.5, fontWeight: '600', color: 'rgba(255,255,255,0.78)', marginTop: 5 },
+
+  weatherStrip: { flexDirection: 'row', paddingVertical: 4 },
+  weatherCell: { flex: 1, alignItems: 'center', paddingVertical: 12, gap: 4 },
+  weatherCellBorder: { borderLeftWidth: 1, borderLeftColor: C.line2 },
+  weatherValue: { fontSize: 14, fontWeight: '700', color: C.ink },
+  weatherLabel: { fontSize: 11, fontWeight: '600', color: C.muted },
 
   /* Body */
-  body: { padding: 20 },
-  sectionLabel: {
-    fontSize: 11, fontWeight: '700', color: C.muted,
-    textTransform: 'uppercase', letterSpacing: 1,
-    marginBottom: 12, marginTop: 4,
-  },
+  body: { paddingHorizontal: 18, paddingTop: 22 },
+  sectionLabel: { fontSize: 19, fontWeight: '700', color: C.ink, letterSpacing: -0.4, marginBottom: 12 },
 
   /* Quick menus */
   quickRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   quickCard: {
-    flex: 1, backgroundColor: C.surface, borderRadius: 14,
-    padding: 14, alignItems: 'center', ...shadow.sm,
+    flex: 1, backgroundColor: C.surface, borderRadius: 16,
+    padding: 14, alignItems: 'flex-start', gap: 10, ...shadow.sm,
   },
-  quickIcon: {
-    width: 44, height: 44, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
-  },
+  quickIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   quickEmoji: { fontSize: 20 },
-  quickLabel: { fontSize: 13, fontWeight: '700', color: C.ink, marginBottom: 2, textAlign: 'center' },
-  quickSub: { fontSize: 11, color: C.muted, textAlign: 'center' },
+  quickLabel: { fontSize: 14, fontWeight: '700', color: C.ink },
+  quickDesc: { fontSize: 11, color: C.muted, fontWeight: '600' },
 
   /* Airline banner */
-  airlineBanner: {
-    backgroundColor: C.ink, borderRadius: 16, padding: 16,
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 24,
-  },
-  airlineBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  airlineBannerCode: {
-    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
-  },
-  airlineBannerCodeText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  airlineBannerName: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  airlineBannerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 11 },
-  airlineBannerBtn: {
-    backgroundColor: C.brand, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 8,
-  },
-  airlineBannerBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  airlineBanner: { borderRadius: 16, overflow: 'hidden', marginBottom: 8, ...shadow.md },
+  airlineBannerGrad: { padding: 16, flexDirection: 'row', alignItems: 'center' },
+  airlineBannerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  airlineMark: { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  airlineMarkText: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 },
+  airlineBannerEyebrow: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.55)', letterSpacing: 1.5, marginBottom: 2 },
+  airlineBannerName: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  airlineBannerSub: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+  airlineBannerArrow: { width: 34, height: 34, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
+  airlineBannerArrowText: { color: '#fff', fontSize: 22, fontWeight: '300', lineHeight: 26 },
 
   /* Popular posts */
-  postCard: {
-    backgroundColor: C.surface, borderRadius: 14,
-    padding: 16, marginBottom: 10, ...shadow.sm,
-  },
-  postTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  countryChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4,
-  },
-  countryChipCode: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-  countryChipName: { fontSize: 12, fontWeight: '600' },
-  postRating: { fontSize: 12, color: C.warn, letterSpacing: 1 },
-  postTitle: { fontSize: 15, fontWeight: '700', color: C.ink, marginBottom: 8 },
-  postMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  postMetaText: { fontSize: 12, color: C.muted },
-  postMetaDot: { fontSize: 12, color: C.muted },
+  popularCard: { backgroundColor: C.surface, borderRadius: 16, overflow: 'hidden', ...shadow.sm },
+  popularRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  divider: { height: 1, backgroundColor: C.line2, marginLeft: 16 },
+  flagChip: { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  flagCode: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  popularMeta: { flex: 1 },
+  popularTitle: { fontSize: 14.5, fontWeight: '700', color: C.ink, marginBottom: 4 },
+  popularBottom: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  popularAuthor: { fontSize: 12, fontWeight: '600', color: C.muted },
+  popularLike: { fontSize: 12, fontWeight: '700', color: C.no },
 });

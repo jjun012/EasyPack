@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+rootDirectory = "backend"
+
+[deploy]
+startCommand = "java -jar backend/build/libs/*.jar"
+restartPolicyType = "on_failure"

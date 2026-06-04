@@ -13,8 +13,9 @@ function avatarHue(name) {
   return h;
 }
 
-export default function PostListScreen({ navigation }) {
-  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
+export default function PostListScreen({ navigation, route }) {
+  const paramCountry = route?.params?.country;
+  const [selectedCountry, setSelectedCountry] = useState(paramCountry || COUNTRIES[0]);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,40 +41,42 @@ export default function PostListScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Country pill tabs */}
-      <View style={styles.tabBar}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabScroll}
-        >
-          {COUNTRIES.map((c) => {
-            const d = COUNTRY_DATA[c] || {};
-            const active = selectedCountry === c;
-            return (
-              <TouchableOpacity
-                key={c}
-                style={[styles.tab, active && styles.tabActive]}
-                onPress={() => setSelectedCountry(c)}
-                activeOpacity={0.75}
-              >
-                <View style={[
-                  styles.tabCode,
-                  { backgroundColor: active ? '#fff' : d.tint || C.brandSoft },
-                ]}>
-                  <Text style={[
-                    styles.tabCodeText,
-                    { color: active ? C.brand : (d.ink || C.muted) },
+      {/* Country pill tabs — only show when no country param */}
+      {!paramCountry && (
+        <View style={styles.tabBar}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabScroll}
+          >
+            {COUNTRIES.map((c) => {
+              const d = COUNTRY_DATA[c] || {};
+              const active = selectedCountry === c;
+              return (
+                <TouchableOpacity
+                  key={c}
+                  style={[styles.tab, active && styles.tabActive]}
+                  onPress={() => setSelectedCountry(c)}
+                  activeOpacity={0.75}
+                >
+                  <View style={[
+                    styles.tabCode,
+                    { backgroundColor: active ? '#fff' : d.tint || C.brandSoft },
                   ]}>
-                    {d.code || c.slice(0, 2).toUpperCase()}
-                  </Text>
-                </View>
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>{c}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+                    <Text style={[
+                      styles.tabCodeText,
+                      { color: active ? C.brand : (d.ink || C.muted) },
+                    ]}>
+                      {d.code || c.slice(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                  <Text style={[styles.tabText, active && styles.tabTextActive]}>{c}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
 
       {loading ? (
         <ActivityIndicator style={{ flex: 1 }} color={C.brand} />

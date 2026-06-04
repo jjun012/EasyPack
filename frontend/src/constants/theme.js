@@ -34,11 +34,11 @@ export const shadow = {
 };
 
 export const COUNTRY_DATA = {
-  '일본':   { code: 'JP', city: '도쿄',   tint: '#FCE4E4', ink: '#A81F1F', bg: '#9B4060' },
-  '미국':   { code: 'US', city: '뉴욕',   tint: '#E9F0FF', ink: '#1C49C2', bg: '#2B4899' },
-  '베트남': { code: 'VN', city: '하노이', tint: '#FDF0D5', ink: '#9A5E00', bg: '#1A8A72' },
-  '필리핀': { code: 'PH', city: '마닐라', tint: '#E2F6EB', ink: '#0B6E3D', bg: '#1E8A50' },
-  '태국':   { code: 'TH', city: '방콕',   tint: '#FFEDE6', ink: '#D8451B', bg: '#C06020' },
+  '일본':   { code: 'JP', city: '도쿄',   tint: '#FCE4E4', ink: '#A81F1F', bg: '#9B4060', grad: ['#F7B7C4', '#E26A8D', '#7B3A6E'], emoji: '벚꽃 · 신사' },
+  '미국':   { code: 'US', city: '뉴욕',   tint: '#E9F0FF', ink: '#1C49C2', bg: '#2B4899', grad: ['#7FB0FF', '#3F6BD6', '#1B2A6B'], emoji: '마천루 · 자유' },
+  '베트남': { code: 'VN', city: '하노이', tint: '#FDF0D5', ink: '#9A5E00', bg: '#1A8A72', grad: ['#73D9C4', '#1FA98A', '#0C5C53'], emoji: '에메랄드 해변' },
+  '필리핀': { code: 'PH', city: '마닐라', tint: '#E2F6EB', ink: '#0B6E3D', bg: '#1E8A50', grad: ['#9AE6B4', '#2FB572', '#0B6E3D'], emoji: '리조트 · 다이빙' },
+  '태국':   { code: 'TH', city: '방콕',   tint: '#FFEDE6', ink: '#D8451B', bg: '#C06020', grad: ['#FFC98A', '#F38B3C', '#A8431A'], emoji: '사원 · 야시장' },
 };
 
 export const AIRLINE_DATA = {

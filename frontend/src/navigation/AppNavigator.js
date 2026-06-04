@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import HomeScreen from '../screens/home/HomeScreen';
+import CommunityScreen from '../screens/community/CommunityScreen';
 import PostListScreen from '../screens/community/PostListScreen';
 import PostDetailScreen from '../screens/community/PostDetailScreen';
 import CreatePostScreen from '../screens/community/CreatePostScreen';
@@ -91,6 +92,7 @@ function CommunityStack() {
         headerTintColor: C.brand,
       }}
     >
+      <Stack.Screen name="Community" component={CommunityScreen} options={{ headerShown: false }} />
       <Stack.Screen name="PostList" component={PostListScreen} options={{ title: '커뮤니티' }} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: '여행 후기' }} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ title: '글 작성' }} />
@@ -170,6 +172,7 @@ function AuthStack() {
           headerShadowVisible: false,
           headerTitleStyle: { fontWeight: '700', color: C.ink },
           headerTintColor: C.brand,
+          headerBackTitle: '',
         }}
       />
     </Stack.Navigator>
