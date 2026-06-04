@@ -48,6 +48,7 @@ export default function HomeScreen({ navigation }) {
   const [popularPosts, setPopularPosts] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [weather, setWeather]         = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
 
   useFocusEffect(useCallback(() => { loadData(); }, []));
 
@@ -61,7 +62,7 @@ export default function HomeScreen({ navigation }) {
       const d = u?.travelDestination;
       if (d) {
         const weatherCity = CITY_DATA[d] ? d : (COUNTRY_DATA[d] ? COUNTRY_DATA[d].city : null);
-        if (weatherCity) fetchWeather(weatherCity);
+        if (weatherCity) { setWeatherLoading(true); fetchWeather(weatherCity); }
       }
     } catch (e) {
     } finally {
@@ -72,7 +73,10 @@ export default function HomeScreen({ navigation }) {
   async function fetchWeather(cityName) {
     try {
       const wttrName = CITY_DATA[cityName]?.wttr || cityName;
-      const res  = await fetch(`https://wttr.in/${encodeURIComponent(wttrName)}?format=j1`);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      const res  = await fetch(`https://wttr.in/${encodeURIComponent(wttrName)}?format=j1`, { signal: controller.signal });
+      clearTimeout(timer);
       const json = await res.json();
       const cur   = json.current_condition?.[0];
       const today = json.weather?.[0];
@@ -88,7 +92,10 @@ export default function HomeScreen({ navigation }) {
           cond: weatherLabel(cur.weatherCode),
         });
       }
-    } catch (e) {}
+    } catch (e) {
+    } finally {
+      setWeatherLoading(false);
+    }
   }
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color={C.brand} />;
@@ -187,7 +194,7 @@ export default function HomeScreen({ navigation }) {
                   <Text style={s.heroCity}>{dest}</Text>
                   <Text style={s.heroSub}>
                     {countryInfo.emoji || ''}
-                    {weather ? ` · ${weather.cond} ${weather.lo}°/${weather.hi}°` : ' · 날씨 불러오는 중…'}
+                    {weather ? ` · ${weather.cond} ${weather.lo}°/${weather.hi}°` : weatherLoading ? ' · 날씨 불러오는 중…' : ''}
                   </Text>
                 </>
               ) : (
