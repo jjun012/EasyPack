@@ -19,7 +19,7 @@ export default function PostDetailScreen({ route, navigation }) {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [liked, setLiked] = useState(false);
-  const [myUserId, setMyUserId] = useState(null);
+  const [myNickname, setMyNickname] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadAll(); }, []);
@@ -27,7 +27,7 @@ export default function PostDetailScreen({ route, navigation }) {
   async function loadAll() {
     try {
       const stored = await AsyncStorage.getItem('user');
-      if (stored) setMyUserId(JSON.parse(stored).userId);
+      if (stored) setMyNickname(JSON.parse(stored).nickname);
       const [postData, commentsData, likeData] = await Promise.all([
         api.get(`/api/community/post/${postId}`),
         api.get(`/api/community/post/${postId}/comments`),
@@ -102,7 +102,7 @@ export default function PostDetailScreen({ route, navigation }) {
     </View>
   );
 
-  const isAuthor = post.authorNickname === myUserId;
+  const isAuthor = post.authorNickname === myNickname;
   const authorHue = avatarHue(post.authorNickname);
   const cd = COUNTRY_DATA[post.country] || {};
 
@@ -174,7 +174,7 @@ export default function PostDetailScreen({ route, navigation }) {
                     <Text style={styles.commentAvatarText}>{(c.authorNickname || '?')[0].toUpperCase()}</Text>
                   </View>
                   <Text style={styles.commentAuthor}>{c.authorNickname}</Text>
-                  {c.userId === myUserId && (
+                  {c.authorNickname === myNickname && (
                     <TouchableOpacity onPress={() => deleteComment(c.id)} style={styles.commentDelete}>
                       <Text style={styles.commentDeleteText}>삭제</Text>
                     </TouchableOpacity>
