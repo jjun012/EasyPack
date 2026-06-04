@@ -3,18 +3,16 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { C, shadow } from '../../constants/theme';
 
 const STATUS_CONFIG = {
-  '반입가능':   {
-    color: C.ok, bg: C.okSoft, ink: C.okInk,
-    label: '반입 가능', icon: '✓', border: C.ok + '40',
-  },
-  '반입불가':   {
-    color: C.no, bg: C.noSoft, ink: C.noInk,
-    label: '반입 불가', icon: '✕', border: C.no + '40',
-  },
-  '제한적반입': {
-    color: C.warn, bg: C.warnSoft, ink: C.warnInk,
-    label: '제한 반입', icon: '!', border: C.warn + '40',
-  },
+  '반입가능':   { color: C.ok,   bg: C.okSoft,   ink: C.okInk,   label: '반입 가능', icon: '✓', border: C.ok   + '40' },
+  '반입불가':   { color: C.no,   bg: C.noSoft,   ink: C.noInk,   label: '반입 불가', icon: '✕', border: C.no   + '40' },
+  '제한적반입': { color: C.warn, bg: C.warnSoft, ink: C.warnInk, label: '제한 반입', icon: '!', border: C.warn + '40' },
+  // 영문 키 대응
+  'allowed':    { color: C.ok,   bg: C.okSoft,   ink: C.okInk,   label: '반입 가능', icon: '✓', border: C.ok   + '40' },
+  'prohibited': { color: C.no,   bg: C.noSoft,   ink: C.noInk,   label: '반입 불가', icon: '✕', border: C.no   + '40' },
+  'restricted': { color: C.warn, bg: C.warnSoft, ink: C.warnInk, label: '제한 반입', icon: '!', border: C.warn + '40' },
+  'ok':         { color: C.ok,   bg: C.okSoft,   ink: C.okInk,   label: '반입 가능', icon: '✓', border: C.ok   + '40' },
+  'no':         { color: C.no,   bg: C.noSoft,   ink: C.noInk,   label: '반입 불가', icon: '✕', border: C.no   + '40' },
+  'warn':       { color: C.warn, bg: C.warnSoft, ink: C.warnInk, label: '제한 반입', icon: '!', border: C.warn + '40' },
 };
 
 export default function AnalysisResultScreen({ route, navigation }) {

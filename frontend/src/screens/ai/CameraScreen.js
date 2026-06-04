@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, Image, Animated,
+  Alert, ActivityIndicator, Image, Animated, Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,6 +11,7 @@ import { AI_SERVER_URL } from '../../constants/config';
 import { C, shadow, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
 
 export default function CameraScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -48,7 +50,16 @@ export default function CameraScreen({ navigation }) {
           airline: user?.airline || '대한항공',
         }),
       });
-      const result = await res.json();
+      const raw = await res.json();
+      // 서버 응답 필드 정규화 (영문/한글 키 모두 대응)
+      const result = {
+        item:        raw.item || raw.name || raw.object || '물품',
+        category:    raw.category || raw.verdict || raw.status || '확인 필요',
+        explanation: raw.explanation || raw.description || raw.reason || raw.message || '',
+        tags:        raw.tags || raw.labels || [],
+        country:     raw.country || '',
+        airline:     raw.airline || '',
+      };
       navigation.navigate('AnalysisResult', { result });
     } catch (e) {
       Alert.alert('분석 실패', '다시 시도해주세요.');
@@ -155,7 +166,7 @@ export default function CameraScreen({ navigation }) {
       </CameraView>
 
       {/* Bottom controls */}
-      <View style={styles.controls}>
+      <View style={[styles.controls, { paddingBottom: (insets.bottom || 0) + (Platform.OS === 'ios' ? 100 : 90) }]}>
         <TouchableOpacity style={styles.sideBtn} onPress={pickImage}>
           <View style={styles.sideBtnIcon}>
             <Text style={styles.sideBtnEmoji}>🖼️</Text>

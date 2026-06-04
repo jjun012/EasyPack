@@ -73,10 +73,7 @@ export default function HomeScreen({ navigation }) {
   async function fetchWeather(cityName) {
     try {
       const wttrName = CITY_DATA[cityName]?.wttr || cityName;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
-      const res  = await fetch(`https://wttr.in/${encodeURIComponent(wttrName)}?format=j1`, { signal: controller.signal });
-      clearTimeout(timer);
+      const res  = await fetch(`https://wttr.in/${encodeURIComponent(wttrName)}?format=j1`);
       const json = await res.json();
       const cur   = json.current_condition?.[0];
       const today = json.weather?.[0];
