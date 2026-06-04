@@ -9,9 +9,9 @@ import { api } from '../../api/client';
 import { C, shadow, CITY_DATA, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
 
 const QUICK_MENUS = [
-  { label: '물품 촬영', desc: 'AI로 반입 확인',   screen: 'Camera',    bg: C.brandSoft,  ink: C.brandInk,  icon: '⬡' },
-  { label: '커뮤니티', desc: '나라별 여행 후기',  screen: 'Community', bg: C.accentSoft, ink: C.accentInk, icon: '✈' },
-  { label: '수하물 정보', desc: '반입 규정 안내', screen: 'Baggage',   bg: C.okSoft,     ink: C.okInk,     icon: '🧳' },
+  { label: '물품 촬영',   desc: 'AI로 반입 확인',   screen: 'Camera',    bg: C.brandSoft,  ink: C.brandInk,  icon: '⬡' },
+  { label: '커뮤니티',   desc: '나라별 여행 후기',  screen: 'Community', bg: C.accentSoft, ink: C.accentInk, icon: '✈' },
+  { label: '수하물 정보', desc: '반입 규정 안내',   screen: 'Baggage',   bg: C.okSoft,     ink: C.okInk,     icon: '🧳' },
 ];
 
 const BAGGAGE_CARRY = { '대한항공': 12, '아시아나항공': 10, '제주항공': 10, '티웨이항공': 10, '진에어항공': 12 };
@@ -30,10 +30,10 @@ function weatherInfo(code) {
 }
 
 export default function HomeScreen({ navigation }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser]               = useState(null);
   const [popularPosts, setPopularPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [weather, setWeather] = useState(null);
+  const [loading, setLoading]         = useState(true);
+  const [weather, setWeather]         = useState(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -44,7 +44,8 @@ export default function HomeScreen({ navigation }) {
       if (parsedUser) setUser(parsedUser);
       const posts = await api.get('/api/community/posts/popular');
       setPopularPosts(posts);
-      if (parsedUser?.travelDestination) fetchWeather(parsedUser.travelDestination);
+      const dest = parsedUser?.travelDestination;
+      if (dest && CITY_DATA[dest]) fetchWeather(dest);
     } catch (e) {
     } finally {
       setLoading(false);
@@ -74,32 +75,43 @@ export default function HomeScreen({ navigation }) {
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color={C.brand} />;
 
-  const dest = user?.travelDestination;
-  const cityInfo = CITY_DATA[dest] || {};
+  const dest        = user?.travelDestination;
+  const cityInfo    = CITY_DATA[dest] || {};
   const countryInfo = COUNTRY_DATA[cityInfo.country] || {};
   const airlineInfo = AIRLINE_DATA[user?.airline] || {};
-  const heroGrad = countryInfo.grad || [C.ink, '#1a2c54'];
+  const hasCity     = !!cityInfo.country;
+  const heroGrad    = countryInfo.grad || ['#2F6BFF', '#1a2c54'];
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <StatusBar barStyle="light-content" />
 
-      {/* ── Hero destination card ── */}
+      {/* ── Hero ── */}
       <View style={styles.heroCard}>
-        <LinearGradient colors={heroGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroImg}>
-          {/* dark overlay */}
+        <LinearGradient
+          colors={heroGrad}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={styles.heroImg}
+        >
+          {/* overlay */}
           <LinearGradient
-            colors={['rgba(0,0,0,0.18)', 'transparent', 'rgba(0,0,0,0.50)']}
+            colors={['rgba(0,0,0,0.20)', 'transparent', 'rgba(0,0,0,0.55)']}
             style={StyleSheet.absoluteFill}
           />
 
-          {/* top row: route badge + weather */}
+          {/* top row */}
           <View style={styles.heroTopRow}>
-            <View style={styles.routePill}>
-              <Text style={styles.routeCode}>ICN</Text>
-              <Text style={styles.routePlane}>✈</Text>
-              <Text style={styles.routeCode}>{cityInfo.countryCode || countryInfo.code || '??'}</Text>
-            </View>
+            {hasCity ? (
+              <View style={styles.routePill}>
+                <Text style={styles.routeCode}>ICN</Text>
+                <Text style={styles.routePlane}>✈</Text>
+                <Text style={styles.routeCode}>{cityInfo.countryCode || countryInfo.code || '??'}</Text>
+              </View>
+            ) : (
+              <View style={styles.routePill}>
+                <Text style={styles.routeCode}>EASYPACK</Text>
+              </View>
+            )}
             {weather && (
               <View style={styles.weatherPill}>
                 <Text style={styles.weatherPillEmoji}>{weather.emoji}</Text>
@@ -108,16 +120,34 @@ export default function HomeScreen({ navigation }) {
             )}
           </View>
 
-          {/* bottom: city info */}
+          {/* bottom */}
           <View style={styles.heroBottom}>
-            <Text style={styles.heroNextTrip}>
-              NEXT TRIP · {(cityInfo.country || '').toUpperCase()}
-            </Text>
-            <Text style={styles.heroCity}>{dest || '여행지'}</Text>
-            {weather && (
-              <Text style={styles.heroSub}>
-                {countryInfo.emoji || ''} · {weather.label} {weather.lo}°/{weather.hi}°
-              </Text>
+            {hasCity ? (
+              <>
+                <Text style={styles.heroNextTrip}>
+                  NEXT TRIP · {(cityInfo.country || '').toUpperCase()}
+                </Text>
+                <Text style={styles.heroCity}>{dest}</Text>
+                {weather ? (
+                  <Text style={styles.heroSub}>
+                    {countryInfo.emoji || ''} · {weather.label} {weather.lo}°/{weather.hi}°
+                  </Text>
+                ) : (
+                  <Text style={styles.heroSub}>날씨 불러오는 중...</Text>
+                )}
+              </>
+            ) : (
+              <>
+                <Text style={styles.heroNextTrip}>NEXT TRIP</Text>
+                <Text style={styles.heroCity}>여행지 미설정</Text>
+                <TouchableOpacity
+                  style={styles.heroSetBtn}
+                  onPress={() => navigation.navigate('Profile')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.heroSetBtnText}>프로필에서 여행지 설정하기 →</Text>
+                </TouchableOpacity>
+              </>
             )}
           </View>
         </LinearGradient>
@@ -223,7 +253,7 @@ export default function HomeScreen({ navigation }) {
           </>
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 32 }} />
       </View>
     </ScrollView>
   );
@@ -233,8 +263,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
 
   /* Hero */
-  heroCard: { backgroundColor: C.surface, ...shadow.md, marginBottom: 0 },
-  heroImg: { height: 224, justifyContent: 'space-between', padding: 18 },
+  heroCard: { backgroundColor: C.surface, ...shadow.md },
+  heroImg:  { height: 240, justifyContent: 'space-between', padding: 20 },
 
   heroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   routePill: {
@@ -242,7 +272,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.22)',
     borderRadius: 999, paddingHorizontal: 13, paddingVertical: 7,
   },
-  routeCode: { color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: 1 },
+  routeCode:  { color: '#fff', fontSize: 12, fontWeight: '800', letterSpacing: 1 },
   routePlane: { color: '#fff', fontSize: 13 },
   weatherPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -250,21 +280,28 @@ const styles = StyleSheet.create({
     borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6,
   },
   weatherPillEmoji: { fontSize: 15 },
-  weatherPillTemp: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  weatherPillTemp:  { color: '#fff', fontSize: 14, fontWeight: '800' },
 
   heroBottom: {},
-  heroNextTrip: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.82)', letterSpacing: 2, marginBottom: 3 },
-  heroCity: { fontSize: 30, fontWeight: '800', color: '#fff', letterSpacing: -0.5, lineHeight: 34 },
-  heroSub: { fontSize: 12.5, fontWeight: '600', color: 'rgba(255,255,255,0.78)', marginTop: 5 },
+  heroNextTrip: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.80)', letterSpacing: 2, marginBottom: 4 },
+  heroCity:     { fontSize: 30, fontWeight: '800', color: '#fff', letterSpacing: -0.5, lineHeight: 36 },
+  heroSub:      { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.75)', marginTop: 5 },
+  heroSetBtn: {
+    marginTop: 10, alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.20)',
+    borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6,
+  },
+  heroSetBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
-  weatherStrip: { flexDirection: 'row', paddingVertical: 4 },
-  weatherCell: { flex: 1, alignItems: 'center', paddingVertical: 12, gap: 4 },
+  /* Weather strip */
+  weatherStrip: { flexDirection: 'row', paddingVertical: 4, backgroundColor: C.surface },
+  weatherCell: { flex: 1, alignItems: 'center', paddingVertical: 14, gap: 4 },
   weatherCellBorder: { borderLeftWidth: 1, borderLeftColor: C.line2 },
   weatherValue: { fontSize: 14, fontWeight: '700', color: C.ink },
   weatherLabel: { fontSize: 11, fontWeight: '600', color: C.muted },
 
   /* Body */
-  body: { paddingHorizontal: 18, paddingTop: 22 },
+  body:         { paddingHorizontal: 18, paddingTop: 22 },
   sectionLabel: { fontSize: 19, fontWeight: '700', color: C.ink, letterSpacing: -0.4, marginBottom: 12 },
 
   /* Quick menus */
@@ -273,32 +310,32 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: C.surface, borderRadius: 16,
     padding: 14, alignItems: 'flex-start', gap: 10, ...shadow.sm,
   },
-  quickIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  quickIcon:  { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   quickEmoji: { fontSize: 20 },
-  quickLabel: { fontSize: 14, fontWeight: '700', color: C.ink },
-  quickDesc: { fontSize: 11, color: C.muted, fontWeight: '600' },
+  quickLabel: { fontSize: 13, fontWeight: '700', color: C.ink },
+  quickDesc:  { fontSize: 11, color: C.muted, fontWeight: '600' },
 
   /* Airline banner */
-  airlineBanner: { borderRadius: 16, overflow: 'hidden', marginBottom: 8, ...shadow.md },
+  airlineBanner:     { borderRadius: 16, overflow: 'hidden', marginBottom: 8, ...shadow.md },
   airlineBannerGrad: { padding: 16, flexDirection: 'row', alignItems: 'center' },
   airlineBannerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  airlineMark: { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  airlineMarkText: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 },
+  airlineMark:       { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  airlineMarkText:   { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 },
   airlineBannerEyebrow: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.55)', letterSpacing: 1.5, marginBottom: 2 },
   airlineBannerName: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  airlineBannerSub: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+  airlineBannerSub:  { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.6)', marginTop: 2 },
   airlineBannerArrow: { width: 34, height: 34, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
   airlineBannerArrowText: { color: '#fff', fontSize: 22, fontWeight: '300', lineHeight: 26 },
 
   /* Popular posts */
   popularCard: { backgroundColor: C.surface, borderRadius: 16, overflow: 'hidden', ...shadow.sm },
-  popularRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
-  divider: { height: 1, backgroundColor: C.line2, marginLeft: 16 },
-  flagChip: { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  flagCode: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  popularRow:  { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  divider:     { height: 1, backgroundColor: C.line2, marginLeft: 16 },
+  flagChip:    { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  flagCode:    { fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
   popularMeta: { flex: 1 },
   popularTitle: { fontSize: 14.5, fontWeight: '700', color: C.ink, marginBottom: 4 },
   popularBottom: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   popularAuthor: { fontSize: 12, fontWeight: '600', color: C.muted },
-  popularLike: { fontSize: 12, fontWeight: '700', color: C.no },
+  popularLike:   { fontSize: 12, fontWeight: '700', color: C.no },
 });

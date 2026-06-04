@@ -181,31 +181,36 @@ function AuthStack() {
 
 const tabStyles = StyleSheet.create({
   bar: {
-    position: 'absolute',
-    left: 16, right: 16,
-    bottom: Platform.OS === 'ios' ? 24 : 16,
-    height: 68,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderTopWidth: 0,
+    backgroundColor: C.surface,
+    borderTopWidth: 1,
+    borderTopColor: C.line2,
     paddingTop: 8,
-    paddingBottom: 8,
-    ...shadow.md,
+    paddingBottom: Platform.OS === 'ios' ? 22 : 8,
+    height: Platform.OS === 'ios' ? 82 : 60,
+    shadowColor: '#0E1A33',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -3 },
+    elevation: 8,
   },
   iconWrap: { alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 20 },
+  emoji: { fontSize: 22 },
   label: { fontSize: 10, fontWeight: '500', color: C.faint, marginTop: 2 },
   labelActive: { color: C.brand, fontWeight: '700' },
 
-  /* Center (Camera) FAB style */
+  /* Center (Camera) */
   centerIcon: {
-    width: 52, height: 52, borderRadius: 16,
+    width: 48, height: 48, borderRadius: 14,
     backgroundColor: C.brand,
     alignItems: 'center', justifyContent: 'center',
-    marginTop: -20,
-    ...shadow.brand,
+    marginTop: -10,
+    shadowColor: C.brand,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
-  centerEmoji: { fontSize: 22, color: '#fff' },
+  centerEmoji: { fontSize: 21, color: '#fff' },
 });
 
 const splashStyles = StyleSheet.create({

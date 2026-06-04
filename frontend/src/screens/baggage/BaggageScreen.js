@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   tabBtnText: { fontSize: 13.5, fontWeight: '700', color: C.ink2 },
   tabBtnTextActive: { color: '#fff' },
 
-  body: { paddingHorizontal: 18, paddingBottom: 40 },
+  body: { paddingHorizontal: 18, paddingBottom: 110 },
 
   pageHeaderCard: { backgroundColor: C.surface, borderRadius: 22, marginBottom: 14, ...shadow.sm },
   pageHeaderTop: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 18 },
