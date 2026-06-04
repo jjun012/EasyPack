@@ -4,13 +4,14 @@ import {
   StyleSheet, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { api } from '../../api/client';
-import { COUNTRIES, AIRLINES } from '../../constants/config';
-import { C, shadow, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
+import { AIRLINES } from '../../constants/config';
+import { C, shadow, AIRLINE_DATA } from '../../constants/theme';
+import CitySearchInput from '../../components/CitySearchInput';
 
 export default function RegisterScreen({ navigation }) {
   const [form, setForm] = useState({
     user_id: '', password: '', nickname: '',
-    travel_destination: COUNTRIES[0], airline: AIRLINES[0],
+    travel_destination: '', airline: AIRLINES[0],
   });
   const [loading, setLoading] = useState(false);
 
@@ -68,30 +69,13 @@ export default function RegisterScreen({ navigation }) {
         ))}
       </View>
 
-      {/* 여행 국가 — 3-per-row grid */}
+      {/* 여행 도시 — 검색 */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>여행 국가</Text>
-        <View style={styles.countryGrid}>
-          {COUNTRIES.map((c) => {
-            const d = COUNTRY_DATA[c] || {};
-            const active = form.travel_destination === c;
-            return (
-              <TouchableOpacity
-                key={c}
-                style={[styles.countryCard, active && styles.countryCardActive]}
-                onPress={() => set('travel_destination', c)}
-                activeOpacity={0.75}
-              >
-                <View style={[styles.codeBadge, { backgroundColor: active ? C.brand : C.line }]}>
-                  <Text style={[styles.codeBadgeText, { color: active ? '#fff' : C.muted }]}>
-                    {d.code || c.slice(0, 2).toUpperCase()}
-                  </Text>
-                </View>
-                <Text style={[styles.countryName, active && styles.countryNameActive]}>{c}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <Text style={styles.sectionTitle}>여행 도시</Text>
+        <CitySearchInput
+          value={form.travel_destination}
+          onChange={(city) => set('travel_destination', city)}
+        />
       </View>
 
       {/* 항공사 — vertical list */}
@@ -146,22 +130,6 @@ const styles = StyleSheet.create({
     fontSize: 15, color: C.ink,
     borderWidth: 1.5, borderColor: C.line,
   },
-
-  /* Country grid — 3 per row */
-  countryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  countryCard: {
-    width: '30%', alignItems: 'center',
-    paddingVertical: 12, borderRadius: 12,
-    borderWidth: 1.5, borderColor: C.line,
-    backgroundColor: C.bg,
-  },
-  countryCardActive: { backgroundColor: C.brandSoft, borderColor: C.brand },
-  codeBadge: {
-    borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, marginBottom: 6,
-  },
-  codeBadgeText: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
-  countryName: { fontSize: 13, fontWeight: '500', color: C.ink2 },
-  countryNameActive: { color: C.brand, fontWeight: '700' },
 
   /* Airline rows */
   airlineRow: {

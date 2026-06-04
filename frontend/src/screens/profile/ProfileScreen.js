@@ -6,8 +6,9 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../api/client';
-import { COUNTRIES, AIRLINES } from '../../constants/config';
-import { C, shadow, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
+import { AIRLINES } from '../../constants/config';
+import { C, shadow, CITY_DATA, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
+import CitySearchInput from '../../components/CitySearchInput';
 
 export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(null);
@@ -60,7 +61,8 @@ export default function ProfileScreen({ navigation }) {
   if (!user) return <ActivityIndicator style={{ flex: 1 }} color={C.brand} />;
 
   const initial = (user.nickname || user.userId || '?')[0].toUpperCase();
-  const cd = COUNTRY_DATA[user.travelDestination] || {};
+  const cityInfo = CITY_DATA[user.travelDestination] || {};
+  const cd = COUNTRY_DATA[cityInfo.country] || {};
   const ad = AIRLINE_DATA[user.airline] || {};
 
   return (
@@ -78,7 +80,7 @@ export default function ProfileScreen({ navigation }) {
           {user.travelDestination && (
             <View style={[styles.headerBadge, { backgroundColor: cd.tint || C.brandSoft }]}>
               <Text style={[styles.headerBadgeText, { color: cd.ink || C.brand }]}>
-                {cd.code || user.travelDestination?.slice(0, 2).toUpperCase()}
+                {cityInfo.countryCode || user.travelDestination?.slice(0, 2).toUpperCase()}
               </Text>
               <Text style={[styles.headerBadgeLabel, { color: cd.ink || C.brand }]}>
                 {user.travelDestination}
@@ -115,28 +117,11 @@ export default function ProfileScreen({ navigation }) {
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>여행 국가</Text>
-              <View style={styles.pills}>
-                {COUNTRIES.map((c) => {
-                  const d = COUNTRY_DATA[c] || {};
-                  const active = form.travelDestination === c;
-                  return (
-                    <TouchableOpacity
-                      key={c}
-                      style={[styles.pill, active && styles.pillActive]}
-                      onPress={() => setForm((p) => ({ ...p, travelDestination: c }))}
-                      activeOpacity={0.75}
-                    >
-                      {active && (
-                        <View style={[styles.pillCode, { backgroundColor: C.brand }]}>
-                          <Text style={[styles.pillCodeText, { color: '#fff' }]}>{d.code || c.slice(0, 2).toUpperCase()}</Text>
-                        </View>
-                      )}
-                      <Text style={[styles.pillText, active && styles.pillTextActive]}>{c}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              <Text style={styles.fieldLabel}>여행 도시</Text>
+              <CitySearchInput
+                value={form.travelDestination}
+                onChange={(city) => setForm((p) => ({ ...p, travelDestination: city }))}
+              />
             </View>
 
             <View style={styles.field}>
@@ -181,7 +166,7 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.cardTitle}>내 정보</Text>
             {[
               { label: '닉네임', value: user.nickname },
-              { label: '여행 국가', value: user.travelDestination },
+              { label: '여행 도시', value: user.travelDestination },
               { label: '항공사', value: user.airline },
             ].map(({ label, value }, i, arr) => (
               <View key={label} style={[styles.infoRow, i === arr.length - 1 && { borderBottomWidth: 0 }]}>

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../api/client';
-import { C, shadow, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
+import { C, shadow, CITY_DATA, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
 
 const QUICK_MENUS = [
   { label: '물품 촬영', sub: 'AI 카메라', screen: 'Camera',    iconBg: C.brandSoft,       icon: '📸' },
@@ -13,29 +13,60 @@ const QUICK_MENUS = [
   { label: '수하물',   sub: '규정·요금', screen: 'Baggage',   iconBg: C.accentSoft,       icon: '🧳' },
 ];
 
+function weatherInfo(code) {
+  const c = Number(code);
+  if (c === 113) return { emoji: '☀️', label: '맑음' };
+  if (c === 116) return { emoji: '⛅', label: '구름 조금' };
+  if (c <= 122) return { emoji: '☁️', label: '흐림' };
+  if (c === 143 || c === 248 || c === 260) return { emoji: '🌫️', label: '안개' };
+  if (c === 200 || c >= 386) return { emoji: '⛈️', label: '천둥번개' };
+  if ([179, 182, 185, 227, 230, 317, 320, 323, 326, 329, 332, 335, 338, 350, 368, 371, 374, 377].includes(c))
+    return { emoji: '🌨️', label: '눈' };
+  return { emoji: '🌧️', label: '비' };
+}
+
 export default function HomeScreen({ navigation }) {
   const [user, setUser] = useState(null);
   const [popularPosts, setPopularPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [weather, setWeather] = useState(null);
 
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     try {
       const stored = await AsyncStorage.getItem('user');
-      if (stored) setUser(JSON.parse(stored));
+      const parsedUser = stored ? JSON.parse(stored) : null;
+      if (parsedUser) setUser(parsedUser);
       const posts = await api.get('/api/community/posts/popular');
       setPopularPosts(posts);
+      if (parsedUser?.travelDestination) fetchWeather(parsedUser.travelDestination);
     } catch (e) {
     } finally {
       setLoading(false);
     }
   }
 
+  async function fetchWeather(cityName) {
+    try {
+      const wttrName = CITY_DATA[cityName]?.wttr || cityName;
+      const res = await fetch(`https://wttr.in/${encodeURIComponent(wttrName)}?format=j1`);
+      const json = await res.json();
+      const cur = json.current_condition?.[0];
+      if (cur) {
+        setWeather({
+          temp: cur.temp_C,
+          ...weatherInfo(cur.weatherCode),
+        });
+      }
+    } catch (e) {}
+  }
+
   if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color={C.brand} />;
 
   const dest = user?.travelDestination;
-  const countryInfo = COUNTRY_DATA[dest] || {};
+  const cityInfo = CITY_DATA[dest] || {};
+  const countryInfo = COUNTRY_DATA[cityInfo.country] || {};
   const airlineInfo = AIRLINE_DATA[user?.airline] || {};
   const heroBg = countryInfo.bg || C.ink;
 
@@ -53,7 +84,7 @@ export default function HomeScreen({ navigation }) {
             </View>
             <Text style={styles.routeArrow}>→</Text>
             <View style={styles.routeBadge}>
-              <Text style={styles.routeCode}>{countryInfo.code || '??'}</Text>
+              <Text style={styles.routeCode}>{cityInfo.countryCode || countryInfo.code || '??'}</Text>
             </View>
           </View>
           {/* Airline badge */}
@@ -67,8 +98,17 @@ export default function HomeScreen({ navigation }) {
           )}
         </View>
 
-        <Text style={styles.heroCity}>{countryInfo.city || dest || '여행지'}</Text>
-        <Text style={styles.heroGreeting}>안녕하세요, {user?.nickname || '여행자'}님</Text>
+        <Text style={styles.heroCity}>{dest || '여행지'}</Text>
+        <View style={styles.heroBottom}>
+          <Text style={styles.heroGreeting}>안녕하세요, {user?.nickname || '여행자'}님</Text>
+          {weather && (
+            <View style={styles.weatherPill}>
+              <Text style={styles.weatherEmoji}>{weather.emoji}</Text>
+              <Text style={styles.weatherTemp}>{weather.temp}°C</Text>
+              <Text style={styles.weatherLabel}>{weather.label}</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.body}>
@@ -181,8 +221,17 @@ const styles = StyleSheet.create({
   },
   airlineCodeDotText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   airlinePillText: { color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: '600' },
-  heroCity: { fontSize: 36, fontWeight: '900', color: '#fff', letterSpacing: -1, marginBottom: 4 },
+  heroCity: { fontSize: 36, fontWeight: '900', color: '#fff', letterSpacing: -1, marginBottom: 8 },
+  heroBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heroGreeting: { fontSize: 14, color: 'rgba(255,255,255,0.65)' },
+  weatherPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.22)',
+    borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6,
+  },
+  weatherEmoji: { fontSize: 14 },
+  weatherTemp: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  weatherLabel: { fontSize: 12, color: 'rgba(255,255,255,0.75)' },
 
   /* Body */
   body: { padding: 20 },

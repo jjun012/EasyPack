@@ -48,3 +48,38 @@ export const AIRLINE_DATA = {
   '티웨이항공':   { code: 'TW', color: '#E2231A' },
   '진에어항공':   { code: 'LJ', color: '#26C6B5' },
 };
+
+export const CITY_DATA = {
+  // 일본
+  '도쿄':         { country: '일본', countryCode: 'JP', wttr: 'Tokyo' },
+  '오사카':       { country: '일본', countryCode: 'JP', wttr: 'Osaka' },
+  '후쿠오카':     { country: '일본', countryCode: 'JP', wttr: 'Fukuoka' },
+  '삿포로':       { country: '일본', countryCode: 'JP', wttr: 'Sapporo' },
+  '나고야':       { country: '일본', countryCode: 'JP', wttr: 'Nagoya' },
+  '교토':         { country: '일본', countryCode: 'JP', wttr: 'Kyoto' },
+  '오키나와':     { country: '일본', countryCode: 'JP', wttr: 'Naha' },
+  // 미국
+  '뉴욕':         { country: '미국', countryCode: 'US', wttr: 'New York' },
+  '로스앤젤레스': { country: '미국', countryCode: 'US', wttr: 'Los Angeles' },
+  '하와이':       { country: '미국', countryCode: 'US', wttr: 'Honolulu' },
+  '라스베이거스': { country: '미국', countryCode: 'US', wttr: 'Las Vegas' },
+  '샌프란시스코': { country: '미국', countryCode: 'US', wttr: 'San Francisco' },
+  '시카고':       { country: '미국', countryCode: 'US', wttr: 'Chicago' },
+  // 베트남
+  '다낭':         { country: '베트남', countryCode: 'VN', wttr: 'Da Nang' },
+  '하노이':       { country: '베트남', countryCode: 'VN', wttr: 'Hanoi' },
+  '호치민':       { country: '베트남', countryCode: 'VN', wttr: 'Ho Chi Minh City' },
+  '나트랑':       { country: '베트남', countryCode: 'VN', wttr: 'Nha Trang' },
+  '호이안':       { country: '베트남', countryCode: 'VN', wttr: 'Hoi An' },
+  // 필리핀
+  '마닐라':       { country: '필리핀', countryCode: 'PH', wttr: 'Manila' },
+  '세부':         { country: '필리핀', countryCode: 'PH', wttr: 'Cebu' },
+  '보라카이':     { country: '필리핀', countryCode: 'PH', wttr: 'Boracay' },
+  '팔라완':       { country: '필리핀', countryCode: 'PH', wttr: 'Puerto Princesa' },
+  // 태국
+  '방콕':         { country: '태국', countryCode: 'TH', wttr: 'Bangkok' },
+  '치앙마이':     { country: '태국', countryCode: 'TH', wttr: 'Chiang Mai' },
+  '푸켓':         { country: '태국', countryCode: 'TH', wttr: 'Phuket' },
+  '파타야':       { country: '태국', countryCode: 'TH', wttr: 'Pattaya' },
+  '코사무이':     { country: '태국', countryCode: 'TH', wttr: 'Koh Samui' },
+};
