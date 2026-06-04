@@ -41,33 +41,51 @@ export default function TextAnalysisScreen({ navigation }) {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* Hero area */}
         <View style={styles.top}>
           <Text style={styles.title}>물품 반입 확인</Text>
-          <Text style={styles.subtitle}>확인하고 싶은 물품명을 입력하면{'\n'}반입 가능 여부를 알려드려요</Text>
+          <Text style={styles.subtitle}>
+            확인하고 싶은 물품명을 입력하면{'\n'}반입 가능 여부를 알려드려요
+          </Text>
         </View>
 
+        {/* Search card */}
         <View style={styles.card}>
-          <View style={styles.inputRow}>
+          <View style={styles.inputWrapper}>
+            <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
               style={styles.input}
               placeholder="물품명 입력  (예: 보조배터리)"
-              placeholderTextColor={C.textMuted}
+              placeholderTextColor={C.faint}
               value={item}
               onChangeText={setItem}
               returnKeyType="search"
               onSubmitEditing={analyze}
             />
+            {item.length > 0 && (
+              <TouchableOpacity onPress={() => setItem('')} style={styles.clearBtn}>
+                <Text style={styles.clearBtnText}>✕</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          <TouchableOpacity style={[styles.btn, loading && styles.btnLoading]} onPress={analyze} disabled={loading}>
+          <TouchableOpacity
+            style={[styles.btn, loading && styles.btnLoading]}
+            onPress={analyze}
+            disabled={loading}
+          >
             {loading
               ? <ActivityIndicator color="#fff" />
               : <Text style={styles.btnText}>반입 가능 여부 확인</Text>}
           </TouchableOpacity>
         </View>
 
+        {/* Quick chips */}
         <View style={styles.quickSection}>
           <Text style={styles.quickTitle}>자주 찾는 물품</Text>
           <View style={styles.chips}>
@@ -76,6 +94,7 @@ export default function TextAnalysisScreen({ navigation }) {
                 key={ex}
                 style={[styles.chip, item === ex && styles.chipActive]}
                 onPress={() => setItem(ex)}
+                activeOpacity={0.75}
               >
                 <Text style={[styles.chipText, item === ex && styles.chipTextActive]}>{ex}</Text>
               </TouchableOpacity>
@@ -89,32 +108,49 @@ export default function TextAnalysisScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
+
   top: { paddingHorizontal: 24, paddingTop: 32, paddingBottom: 24 },
-  title: { fontSize: 26, fontWeight: '800', color: C.text, letterSpacing: -0.5, marginBottom: 8 },
-  subtitle: { fontSize: 15, color: C.textSec, lineHeight: 22 },
-  card: { marginHorizontal: 16, backgroundColor: C.surface, borderRadius: 20, padding: 20, ...shadow.sm, marginBottom: 24 },
-  inputRow: { marginBottom: 14 },
-  input: {
-    backgroundColor: C.bg, borderRadius: 14,
-    paddingHorizontal: 18, paddingVertical: 16,
-    fontSize: 16, color: C.text,
-    borderWidth: 1.5, borderColor: C.border,
+  title: { fontSize: 26, fontWeight: '800', color: C.ink, letterSpacing: -0.5, marginBottom: 8 },
+  subtitle: { fontSize: 15, color: C.ink2, lineHeight: 22 },
+
+  card: {
+    marginHorizontal: 16, backgroundColor: C.surface,
+    borderRadius: 20, padding: 20, ...shadow.md, marginBottom: 24,
   },
+  inputWrapper: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: C.bg, borderRadius: 14,
+    borderWidth: 1.5, borderColor: C.line,
+    paddingHorizontal: 14, marginBottom: 14,
+  },
+  searchIcon: { fontSize: 16, marginRight: 8 },
+  input: {
+    flex: 1, paddingVertical: 14,
+    fontSize: 16, color: C.ink,
+  },
+  clearBtn: { padding: 4 },
+  clearBtnText: { fontSize: 14, color: C.faint, fontWeight: '600' },
+
   btn: {
-    backgroundColor: C.primary, borderRadius: 14,
+    backgroundColor: C.brand, borderRadius: 14,
     paddingVertical: 16, alignItems: 'center',
+    ...shadow.brand,
   },
   btnLoading: { opacity: 0.7 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+
   quickSection: { paddingHorizontal: 24 },
-  quickTitle: { fontSize: 13, fontWeight: '700', color: C.textSec, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  quickTitle: {
+    fontSize: 11, fontWeight: '700', color: C.muted,
+    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12,
+  },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     paddingHorizontal: 16, paddingVertical: 9,
     borderRadius: 999, backgroundColor: C.surface,
-    borderWidth: 1.5, borderColor: C.border, ...shadow.sm,
+    borderWidth: 1.5, borderColor: C.line, ...shadow.sm,
   },
-  chipActive: { backgroundColor: C.primary, borderColor: C.primary },
-  chipText: { fontSize: 14, color: C.textSec, fontWeight: '500' },
+  chipActive: { backgroundColor: C.brand, borderColor: C.brand },
+  chipText: { fontSize: 14, color: C.ink2, fontWeight: '500' },
   chipTextActive: { color: '#fff', fontWeight: '700' },
 });

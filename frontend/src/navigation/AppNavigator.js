@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, ActivityIndicator, View } from 'react-native';
+import { Text, ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -17,28 +17,44 @@ import TextAnalysisScreen from '../screens/ai/TextAnalysisScreen';
 import AnalysisResultScreen from '../screens/ai/AnalysisResultScreen';
 import BaggageScreen from '../screens/baggage/BaggageScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
-import { C } from '../constants/theme';
+import { C, shadow } from '../constants/theme';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const TAB_ICONS = {
-  Home:      { active: '⬛', inactive: '⬜', label: '홈' },
-  Community: { active: '💬', inactive: '💬', label: '커뮤니티' },
-  Camera:    { active: '📷', inactive: '📷', label: '물품분석' },
-  Baggage:   { active: '🧳', inactive: '🧳', label: '수하물' },
-  Profile:   { active: '👤', inactive: '👤', label: '내정보' },
+const TAB_CONFIG = {
+  Home:      { emoji: '🏠', label: '홈' },
+  Community: { emoji: '💬', label: '커뮤니티' },
+  Camera:    { emoji: '◎',  label: '분석', center: true },
+  Baggage:   { emoji: '🧳', label: '수하물' },
+  Profile:   { emoji: '👤', label: '내정보' },
 };
 
 function TabIcon({ name, focused }) {
-  const labels = {
-    Home: '홈', Community: '커뮤니티', Camera: '분석', Baggage: '수하물', Profile: '내정보',
-  };
-  const emojis = { Home: '🏠', Community: '💬', Camera: '🔍', Baggage: '🧳', Profile: '👤' };
+  const cfg = TAB_CONFIG[name] || {};
+
+  if (cfg.center) {
+    return (
+      <View style={tabStyles.centerIcon}>
+        <Text style={tabStyles.centerEmoji}>{cfg.emoji}</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={{ alignItems: 'center' }}>
-      <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>{emojis[name]}</Text>
+    <View style={tabStyles.iconWrap}>
+      <Text style={[tabStyles.emoji, { opacity: focused ? 1 : 0.45 }]}>{cfg.emoji}</Text>
     </View>
+  );
+}
+
+function TabLabel({ name, focused }) {
+  const cfg = TAB_CONFIG[name] || {};
+  if (cfg.center) return null;
+  return (
+    <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>
+      {cfg.label}
+    </Text>
   );
 }
 
@@ -47,29 +63,18 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
-        tabBarLabel: ({ focused }) => {
-          const labels = { Home: '홈', Community: '커뮤니티', Camera: '분석', Baggage: '수하물', Profile: '내정보' };
-          return (
-            <Text style={{
-              fontSize: 10, fontWeight: focused ? '700' : '500',
-              color: focused ? C.primary : '#9CA3AF',
-              marginTop: 2,
-            }}>
-              {labels[route.name]}
-            </Text>
-          );
-        },
+        tabBarLabel: ({ focused }) => <TabLabel name={route.name} focused={focused} />,
         headerShown: false,
-        tabBarStyle: {
-          height: 64, paddingTop: 6, paddingBottom: 8,
-          borderTopWidth: 1, borderTopColor: '#E8EAF2',
-          backgroundColor: '#fff',
-        },
+        tabBarStyle: tabStyles.bar,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Community" component={CommunityStack} />
-      <Tab.Screen name="Camera" component={CameraScreen} />
+      <Tab.Screen
+        name="Camera"
+        component={CameraScreen}
+        options={{ tabBarStyle: { display: 'none' } }}
+      />
       <Tab.Screen name="Baggage" component={BaggageScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
@@ -80,10 +85,10 @@ function CommunityStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#fff' },
+        headerStyle: { backgroundColor: C.surface },
         headerShadowVisible: false,
-        headerTitleStyle: { fontWeight: '700', fontSize: 17, color: '#1A1F36' },
-        headerTintColor: C.primary,
+        headerTitleStyle: { fontWeight: '700', fontSize: 17, color: C.ink },
+        headerTintColor: C.brand,
       }}
     >
       <Stack.Screen name="PostList" component={PostListScreen} options={{ title: '커뮤니티' }} />
@@ -105,11 +110,14 @@ export default function AppNavigator() {
 
   if (!initialRoute) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F4F5F9' }}>
-        <View style={{ width: 48, height: 48, borderRadius: 13, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 18 }}>EP</Text>
+      <View style={splashStyles.container}>
+        <View style={splashStyles.logoBox}>
+          <Text style={splashStyles.logoText}>EP</Text>
         </View>
-        <ActivityIndicator size="large" color={C.primary} />
+        <Text style={splashStyles.wordmark}>
+          Easy<Text style={splashStyles.wordmarkBold}>Pack</Text>
+        </Text>
+        <ActivityIndicator size="small" color={C.brand} style={{ marginTop: 32 }} />
       </View>
     );
   }
@@ -123,22 +131,24 @@ export default function AppNavigator() {
           name="TextAnalysis"
           component={TextAnalysisScreen}
           options={{
-            headerShown: true, title: '물품 직접 검색',
-            headerStyle: { backgroundColor: '#fff' },
+            headerShown: true,
+            title: '물품 직접 검색',
+            headerStyle: { backgroundColor: C.surface },
             headerShadowVisible: false,
-            headerTitleStyle: { fontWeight: '700', color: '#1A1F36' },
-            headerTintColor: C.primary,
+            headerTitleStyle: { fontWeight: '700', color: C.ink },
+            headerTintColor: C.brand,
           }}
         />
         <Stack.Screen
           name="AnalysisResult"
           component={AnalysisResultScreen}
           options={{
-            headerShown: true, title: '분석 결과',
-            headerStyle: { backgroundColor: '#fff' },
+            headerShown: true,
+            title: '분석 결과',
+            headerStyle: { backgroundColor: C.surface },
             headerShadowVisible: false,
-            headerTitleStyle: { fontWeight: '700', color: '#1A1F36' },
-            headerTintColor: C.primary,
+            headerTitleStyle: { fontWeight: '700', color: C.ink },
+            headerTintColor: C.brand,
           }}
         />
       </Stack.Navigator>
@@ -154,13 +164,58 @@ function AuthStack() {
         name="Register"
         component={RegisterScreen}
         options={{
-          headerShown: true, title: '회원가입',
-          headerStyle: { backgroundColor: '#F4F5F9' },
+          headerShown: true,
+          title: '회원가입',
+          headerStyle: { backgroundColor: C.bg },
           headerShadowVisible: false,
-          headerTitleStyle: { fontWeight: '700', color: '#1A1F36' },
-          headerTintColor: C.primary,
+          headerTitleStyle: { fontWeight: '700', color: C.ink },
+          headerTintColor: C.brand,
         }}
       />
     </Stack.Navigator>
   );
 }
+
+const tabStyles = StyleSheet.create({
+  bar: {
+    position: 'absolute',
+    left: 16, right: 16,
+    bottom: Platform.OS === 'ios' ? 24 : 16,
+    height: 68,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderTopWidth: 0,
+    paddingTop: 8,
+    paddingBottom: 8,
+    ...shadow.md,
+  },
+  iconWrap: { alignItems: 'center', justifyContent: 'center' },
+  emoji: { fontSize: 20 },
+  label: { fontSize: 10, fontWeight: '500', color: C.faint, marginTop: 2 },
+  labelActive: { color: C.brand, fontWeight: '700' },
+
+  /* Center (Camera) FAB style */
+  centerIcon: {
+    width: 52, height: 52, borderRadius: 16,
+    backgroundColor: C.brand,
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: -20,
+    ...shadow.brand,
+  },
+  centerEmoji: { fontSize: 22, color: '#fff' },
+});
+
+const splashStyles = StyleSheet.create({
+  container: {
+    flex: 1, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: C.surface,
+  },
+  logoBox: {
+    width: 72, height: 72, borderRadius: 20,
+    backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center',
+    marginBottom: 16,
+  },
+  logoText: { color: C.brand, fontWeight: '900', fontSize: 26, letterSpacing: -1 },
+  wordmark: { fontSize: 24, fontWeight: '400', color: C.ink, letterSpacing: -0.5 },
+  wordmarkBold: { fontWeight: '800', color: C.brand },
+});

@@ -5,15 +5,12 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../api/client';
-import { C, shadow } from '../../constants/theme';
+import { C, shadow, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
 
-const COUNTRY_FLAG = { '일본': '🇯🇵', '미국': '🇺🇸', '베트남': '🇻🇳', '필리핀': '🇵🇭', '태국': '🇹🇭' };
-
-const MENUS = [
-  { label: '물품 촬영', sub: 'AI 카메라 분석', screen: 'Camera', accent: '#6366F1', emoji: '📸' },
-  { label: '직접 입력', sub: '텍스트로 검색', screen: 'TextAnalysis', accent: '#F59E0B', emoji: '🔍' },
-  { label: '수하물 규정', sub: '허용 무게 · 초과 요금', screen: 'Baggage', accent: '#10B981', emoji: '🧳' },
-  { label: '여행 후기', sub: '여행자 커뮤니티', screen: 'Community', accent: '#EC4899', emoji: '✈️' },
+const QUICK_MENUS = [
+  { label: '물품 촬영', sub: 'AI 카메라', screen: 'Camera',    iconBg: C.brandSoft,       icon: '📸' },
+  { label: '여행 후기', sub: '커뮤니티',  screen: 'Community', iconBg: '#EDE9FE',          icon: '✈️' },
+  { label: '수하물',   sub: '규정·요금', screen: 'Baggage',   iconBg: C.accentSoft,       icon: '🧳' },
 ];
 
 export default function HomeScreen({ navigation }) {
@@ -35,73 +32,120 @@ export default function HomeScreen({ navigation }) {
     }
   }
 
-  if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color={C.primary} />;
+  if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color={C.brand} />;
+
+  const dest = user?.travelDestination;
+  const countryInfo = COUNTRY_DATA[dest] || {};
+  const airlineInfo = AIRLINE_DATA[user?.airline] || {};
+  const heroBg = countryInfo.bg || C.ink;
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <StatusBar barStyle="light-content" />
 
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.greeting}>안녕하세요 👋</Text>
-            <Text style={styles.nickname}>{user?.nickname || '여행자'}님</Text>
+      {/* ── Hero destination card ── */}
+      <View style={[styles.hero, { backgroundColor: heroBg }]}>
+        <View style={styles.heroTop}>
+          {/* Route badges */}
+          <View style={styles.routeRow}>
+            <View style={styles.routeBadge}>
+              <Text style={styles.routeCode}>ICN</Text>
+            </View>
+            <Text style={styles.routeArrow}>→</Text>
+            <View style={styles.routeBadge}>
+              <Text style={styles.routeCode}>{countryInfo.code || '??'}</Text>
+            </View>
           </View>
-          <View style={styles.destBadge}>
-            <Text style={styles.destFlag}>{COUNTRY_FLAG[user?.travelDestination] || '✈️'}</Text>
-            <Text style={styles.destText}>{user?.travelDestination || '미설정'}</Text>
-          </View>
+          {/* Airline badge */}
+          {user?.airline && (
+            <View style={styles.airlinePill}>
+              <View style={[styles.airlineCodeDot, { backgroundColor: airlineInfo.color || C.brand }]}>
+                <Text style={styles.airlineCodeDotText}>{airlineInfo.code || 'KE'}</Text>
+              </View>
+              <Text style={styles.airlinePillText}>{user.airline}</Text>
+            </View>
+          )}
         </View>
-        <View style={styles.airlineBadge}>
-          <Text style={styles.airlineText}>{user?.airline || '항공사 미설정'}</Text>
-        </View>
+
+        <Text style={styles.heroCity}>{countryInfo.city || dest || '여행지'}</Text>
+        <Text style={styles.heroGreeting}>안녕하세요, {user?.nickname || '여행자'}님</Text>
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.sectionLabel}>무엇을 확인할까요?</Text>
-        <View style={styles.grid}>
-          {MENUS.map(({ label, sub, screen, accent, emoji }) => (
+
+        {/* ── Quick menus (3 in a row) ── */}
+        <Text style={styles.sectionLabel}>바로가기</Text>
+        <View style={styles.quickRow}>
+          {QUICK_MENUS.map(({ label, sub, screen, iconBg, icon }) => (
             <TouchableOpacity
               key={screen}
-              style={styles.menuCard}
+              style={styles.quickCard}
               onPress={() => navigation.navigate(screen)}
               activeOpacity={0.75}
             >
-              <View style={[styles.menuIcon, { backgroundColor: accent + '18' }]}>
-                <Text style={styles.menuEmoji}>{emoji}</Text>
+              <View style={[styles.quickIcon, { backgroundColor: iconBg }]}>
+                <Text style={styles.quickEmoji}>{icon}</Text>
               </View>
-              <Text style={styles.menuLabel}>{label}</Text>
-              <Text style={styles.menuSub}>{sub}</Text>
+              <Text style={styles.quickLabel}>{label}</Text>
+              <Text style={styles.quickSub}>{sub}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
+        {/* ── Airline dark banner ── */}
+        {user?.airline && (
+          <View style={styles.airlineBanner}>
+            <View style={styles.airlineBannerLeft}>
+              <View style={[styles.airlineBannerCode, { backgroundColor: airlineInfo.color || C.brand }]}>
+                <Text style={styles.airlineBannerCodeText}>{airlineInfo.code || 'KE'}</Text>
+              </View>
+              <View>
+                <Text style={styles.airlineBannerName}>{user.airline}</Text>
+                <Text style={styles.airlineBannerSub}>이용 중인 항공사</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.airlineBannerBtn}
+              onPress={() => navigation.navigate('Baggage')}
+            >
+              <Text style={styles.airlineBannerBtnText}>수하물 확인</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ── Popular posts ── */}
         {popularPosts.length > 0 && (
           <>
             <Text style={styles.sectionLabel}>인기 게시글</Text>
-            {popularPosts.map((post) => (
-              <TouchableOpacity
-                key={post.id}
-                style={styles.postCard}
-                onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
-                activeOpacity={0.8}
-              >
-                <View style={styles.postTop}>
-                  <View style={styles.countryBadge}>
-                    <Text style={styles.countryBadgeText}>
-                      {COUNTRY_FLAG[post.country]} {post.country}
-                    </Text>
+            {popularPosts.map((post) => {
+              const cd = COUNTRY_DATA[post.country] || {};
+              return (
+                <TouchableOpacity
+                  key={post.id}
+                  style={styles.postCard}
+                  onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.postTop}>
+                    <View style={[styles.countryChip, { backgroundColor: cd.tint || C.brandSoft }]}>
+                      <Text style={[styles.countryChipCode, { color: cd.ink || C.brand }]}>
+                        {cd.code || post.country?.slice(0, 2).toUpperCase()}
+                      </Text>
+                      <Text style={[styles.countryChipName, { color: cd.ink || C.brand }]}>
+                        {post.country}
+                      </Text>
+                    </View>
+                    <Text style={styles.postRating}>{'★'.repeat(post.rating)}</Text>
                   </View>
-                  <Text style={styles.postRating}>{'★'.repeat(post.rating)}</Text>
-                </View>
-                <Text style={styles.postTitle} numberOfLines={1}>{post.title}</Text>
-                <View style={styles.postMeta}>
-                  <Text style={styles.postMetaText}>♥ {post.likeCount}</Text>
-                  <Text style={styles.postMetaDot}>·</Text>
-                  <Text style={styles.postMetaText}>댓글 {post.commentCount}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+                  <Text style={styles.postTitle} numberOfLines={1}>{post.title}</Text>
+                  <View style={styles.postMeta}>
+                    <Text style={styles.postMetaText}>♥ {post.likeCount}</Text>
+                    <Text style={styles.postMetaDot}>·</Text>
+                    <Text style={styles.postMetaText}>댓글 {post.commentCount}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </>
         )}
       </View>
@@ -111,53 +155,91 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
-  header: {
-    backgroundColor: '#1A1F36',
-    paddingTop: 56, paddingHorizontal: 24, paddingBottom: 28,
+
+  /* Hero */
+  hero: {
+    paddingTop: 56, paddingHorizontal: 24, paddingBottom: 32,
   },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
-  greeting: { fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 4 },
-  nickname: { fontSize: 24, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
-  destBadge: {
+  heroTop: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 20,
+  },
+  routeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  routeBadge: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4,
+  },
+  routeCode: { color: '#fff', fontSize: 13, fontWeight: '800', letterSpacing: 1 },
+  routeArrow: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '600' },
+  airlinePill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8,
+    backgroundColor: 'rgba(0,0,0,0.22)',
+    borderRadius: 999, paddingRight: 12, paddingVertical: 4, paddingLeft: 4,
   },
-  destFlag: { fontSize: 18 },
-  destText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  airlineBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: C.primary + 'CC',
-    borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6,
+  airlineCodeDot: {
+    borderRadius: 999, paddingHorizontal: 7, paddingVertical: 3,
   },
-  airlineText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  airlineCodeDotText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  airlinePillText: { color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: '600' },
+  heroCity: { fontSize: 36, fontWeight: '900', color: '#fff', letterSpacing: -1, marginBottom: 4 },
+  heroGreeting: { fontSize: 14, color: 'rgba(255,255,255,0.65)' },
+
+  /* Body */
   body: { padding: 20 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', color: C.textSec, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14, marginTop: 8 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
-  menuCard: {
-    width: '47.5%', backgroundColor: C.surface,
-    borderRadius: 16, padding: 18, ...shadow.sm,
+  sectionLabel: {
+    fontSize: 11, fontWeight: '700', color: C.muted,
+    textTransform: 'uppercase', letterSpacing: 1,
+    marginBottom: 12, marginTop: 4,
   },
-  menuIcon: {
+
+  /* Quick menus */
+  quickRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  quickCard: {
+    flex: 1, backgroundColor: C.surface, borderRadius: 14,
+    padding: 14, alignItems: 'center', ...shadow.sm,
+  },
+  quickIcon: {
     width: 44, height: 44, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
-  menuEmoji: { fontSize: 22 },
-  menuLabel: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 3 },
-  menuSub: { fontSize: 12, color: C.textMuted },
+  quickEmoji: { fontSize: 20 },
+  quickLabel: { fontSize: 13, fontWeight: '700', color: C.ink, marginBottom: 2, textAlign: 'center' },
+  quickSub: { fontSize: 11, color: C.muted, textAlign: 'center' },
+
+  /* Airline banner */
+  airlineBanner: {
+    backgroundColor: C.ink, borderRadius: 16, padding: 16,
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', marginBottom: 24,
+  },
+  airlineBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  airlineBannerCode: {
+    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
+  },
+  airlineBannerCodeText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  airlineBannerName: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  airlineBannerSub: { color: 'rgba(255,255,255,0.5)', fontSize: 11 },
+  airlineBannerBtn: {
+    backgroundColor: C.brand, borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 8,
+  },
+  airlineBannerBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  /* Popular posts */
   postCard: {
     backgroundColor: C.surface, borderRadius: 14,
     padding: 16, marginBottom: 10, ...shadow.sm,
   },
   postTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  countryBadge: {
-    backgroundColor: C.primaryLight, borderRadius: 999,
-    paddingHorizontal: 10, paddingVertical: 4,
+  countryChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4,
   },
-  countryBadgeText: { fontSize: 12, color: C.primary, fontWeight: '600' },
-  postRating: { fontSize: 12, color: '#F59E0B', letterSpacing: 1 },
-  postTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 8 },
+  countryChipCode: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  countryChipName: { fontSize: 12, fontWeight: '600' },
+  postRating: { fontSize: 12, color: C.warn, letterSpacing: 1 },
+  postTitle: { fontSize: 15, fontWeight: '700', color: C.ink, marginBottom: 8 },
   postMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  postMetaText: { fontSize: 12, color: C.textMuted },
-  postMetaDot: { fontSize: 12, color: C.textMuted },
+  postMetaText: { fontSize: 12, color: C.muted },
+  postMetaDot: { fontSize: 12, color: C.muted },
 });

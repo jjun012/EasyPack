@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { api } from '../../api/client';
 import { COUNTRIES, AIRLINES } from '../../constants/config';
-import { C, shadow } from '../../constants/theme';
+import { C, shadow, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
 
 export default function RegisterScreen({ navigation }) {
   const [form, setForm] = useState({
@@ -37,10 +37,15 @@ export default function RegisterScreen({ navigation }) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>계정 만들기</Text>
       <Text style={styles.subtitle}>여행 정보를 입력하면 맞춤 정보를 드려요</Text>
 
+      {/* 기본 정보 */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>기본 정보</Text>
         {[
@@ -53,7 +58,7 @@ export default function RegisterScreen({ navigation }) {
             <TextInput
               style={styles.input}
               placeholder={placeholder}
-              placeholderTextColor={C.textMuted}
+              placeholderTextColor={C.faint}
               value={form[key]}
               onChangeText={(v) => set(key, v)}
               autoCapitalize={autoCapitalize || 'none'}
@@ -63,38 +68,53 @@ export default function RegisterScreen({ navigation }) {
         ))}
       </View>
 
+      {/* 여행 국가 — 3-per-row grid */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>여행 국가</Text>
-        <View style={styles.pills}>
-          {COUNTRIES.map((c) => (
-            <TouchableOpacity
-              key={c}
-              style={[styles.pill, form.travel_destination === c && styles.pillActive]}
-              onPress={() => set('travel_destination', c)}
-            >
-              <Text style={[styles.pillText, form.travel_destination === c && styles.pillTextActive]}>
-                {c}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.countryGrid}>
+          {COUNTRIES.map((c) => {
+            const d = COUNTRY_DATA[c] || {};
+            const active = form.travel_destination === c;
+            return (
+              <TouchableOpacity
+                key={c}
+                style={[styles.countryCard, active && styles.countryCardActive]}
+                onPress={() => set('travel_destination', c)}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.codeBadge, { backgroundColor: active ? C.brand : C.line }]}>
+                  <Text style={[styles.codeBadgeText, { color: active ? '#fff' : C.muted }]}>
+                    {d.code || c.slice(0, 2).toUpperCase()}
+                  </Text>
+                </View>
+                <Text style={[styles.countryName, active && styles.countryNameActive]}>{c}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
+      {/* 항공사 — vertical list */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>주요 이용 항공사</Text>
-        <View style={styles.pills}>
-          {AIRLINES.map((a) => (
+        {AIRLINES.map((a) => {
+          const d = AIRLINE_DATA[a] || {};
+          const active = form.airline === a;
+          return (
             <TouchableOpacity
               key={a}
-              style={[styles.pill, form.airline === a && styles.pillActive]}
+              style={[styles.airlineRow, active && styles.airlineRowActive]}
               onPress={() => set('airline', a)}
+              activeOpacity={0.75}
             >
-              <Text style={[styles.pillText, form.airline === a && styles.pillTextActive]}>
-                {a}
-              </Text>
+              <View style={[styles.airlineCodeBadge, { backgroundColor: d.color || C.brand }]}>
+                <Text style={styles.airlineCodeText}>{d.code || a.slice(0, 2)}</Text>
+              </View>
+              <Text style={[styles.airlineName, active && styles.airlineNameActive]}>{a}</Text>
+              {active && <Text style={styles.checkmark}>✓</Text>}
             </TouchableOpacity>
-          ))}
-        </View>
+          );
+        })}
       </View>
 
       <TouchableOpacity style={styles.btn} onPress={handleRegister} disabled={loading}>
@@ -107,33 +127,63 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 24, paddingBottom: 48 },
-  title: { fontSize: 26, fontWeight: '800', color: C.text, letterSpacing: -0.5, marginBottom: 6 },
-  subtitle: { fontSize: 14, color: C.textSec, marginBottom: 28 },
+  title: { fontSize: 26, fontWeight: '800', color: C.ink, letterSpacing: -0.5, marginBottom: 6 },
+  subtitle: { fontSize: 14, color: C.ink2, marginBottom: 28 },
+
   section: {
     backgroundColor: C.surface, borderRadius: 16, padding: 20,
     marginBottom: 16, ...shadow.sm,
   },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: C.textSec, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 14 },
+  sectionTitle: {
+    fontSize: 11, fontWeight: '700', color: C.muted,
+    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14,
+  },
   field: { marginBottom: 14 },
-  label: { fontSize: 13, fontWeight: '600', color: C.text, marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: '600', color: C.ink, marginBottom: 6 },
   input: {
     backgroundColor: C.bg, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 13,
-    fontSize: 15, color: C.text,
-    borderWidth: 1.5, borderColor: C.border,
+    fontSize: 15, color: C.ink,
+    borderWidth: 1.5, borderColor: C.line,
   },
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: {
-    paddingHorizontal: 16, paddingVertical: 9,
-    borderRadius: 999, borderWidth: 1.5, borderColor: C.border,
+
+  /* Country grid — 3 per row */
+  countryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  countryCard: {
+    width: '30%', alignItems: 'center',
+    paddingVertical: 12, borderRadius: 12,
+    borderWidth: 1.5, borderColor: C.line,
     backgroundColor: C.bg,
   },
-  pillActive: { backgroundColor: C.primary, borderColor: C.primary },
-  pillText: { fontSize: 14, color: C.textSec, fontWeight: '500' },
-  pillTextActive: { color: '#fff', fontWeight: '700' },
+  countryCardActive: { backgroundColor: C.brandSoft, borderColor: C.brand },
+  codeBadge: {
+    borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, marginBottom: 6,
+  },
+  codeBadgeText: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
+  countryName: { fontSize: 13, fontWeight: '500', color: C.ink2 },
+  countryNameActive: { color: C.brand, fontWeight: '700' },
+
+  /* Airline rows */
+  airlineRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 12, paddingHorizontal: 4,
+    borderRadius: 10, marginBottom: 4,
+    gap: 10,
+  },
+  airlineRowActive: { backgroundColor: C.brandSoft },
+  airlineCodeBadge: {
+    borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4,
+    minWidth: 36, alignItems: 'center',
+  },
+  airlineCodeText: { fontSize: 11, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
+  airlineName: { flex: 1, fontSize: 14, fontWeight: '500', color: C.ink2 },
+  airlineNameActive: { color: C.brand, fontWeight: '700' },
+  checkmark: { fontSize: 14, color: C.brand, fontWeight: '700' },
+
   btn: {
-    backgroundColor: C.primary, borderRadius: 14,
+    backgroundColor: C.brand, borderRadius: 14,
     paddingVertical: 17, alignItems: 'center',
+    ...shadow.brand,
   },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

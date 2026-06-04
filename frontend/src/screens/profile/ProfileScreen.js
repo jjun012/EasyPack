@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../api/client';
 import { COUNTRIES, AIRLINES } from '../../constants/config';
-import { C, shadow } from '../../constants/theme';
+import { C, shadow, COUNTRY_DATA, AIRLINE_DATA } from '../../constants/theme';
 
 export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(null);
@@ -57,22 +57,50 @@ export default function ProfileScreen({ navigation }) {
     ]);
   }
 
-  if (!user) return <ActivityIndicator style={{ flex: 1 }} color={C.primary} />;
+  if (!user) return <ActivityIndicator style={{ flex: 1 }} color={C.brand} />;
 
   const initial = (user.nickname || user.userId || '?')[0].toUpperCase();
+  const cd = COUNTRY_DATA[user.travelDestination] || {};
+  const ad = AIRLINE_DATA[user.airline] || {};
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header — gradient avatar */}
       <View style={styles.header}>
-        <View style={styles.avatar}>
+        <View style={styles.avatarGradient}>
           <Text style={styles.avatarText}>{initial}</Text>
         </View>
         <Text style={styles.nickname}>{user.nickname}</Text>
         <Text style={styles.userId}>@{user.userId}</Text>
+
+        {/* Country + airline badges */}
+        <View style={styles.badgesRow}>
+          {user.travelDestination && (
+            <View style={[styles.headerBadge, { backgroundColor: cd.tint || C.brandSoft }]}>
+              <Text style={[styles.headerBadgeText, { color: cd.ink || C.brand }]}>
+                {cd.code || user.travelDestination?.slice(0, 2).toUpperCase()}
+              </Text>
+              <Text style={[styles.headerBadgeLabel, { color: cd.ink || C.brand }]}>
+                {user.travelDestination}
+              </Text>
+            </View>
+          )}
+          {user.airline && (
+            <View style={[styles.headerBadge, { backgroundColor: (ad.color || C.brand) + '22' }]}>
+              <Text style={[styles.headerBadgeText, { color: ad.color || C.brand }]}>
+                {ad.code || user.airline?.slice(0, 2)}
+              </Text>
+              <Text style={[styles.headerBadgeLabel, { color: ad.color || C.brand }]}>
+                {user.airline}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.body}>
         {editing ? (
+          /* Edit form */
           <View style={styles.card}>
             <Text style={styles.cardTitle}>정보 수정</Text>
 
@@ -82,37 +110,57 @@ export default function ProfileScreen({ navigation }) {
                 style={styles.input}
                 value={form.nickname}
                 onChangeText={(v) => setForm((p) => ({ ...p, nickname: v }))}
-                placeholderTextColor={C.textMuted}
+                placeholderTextColor={C.faint}
               />
             </View>
 
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>여행 국가</Text>
               <View style={styles.pills}>
-                {COUNTRIES.map((c) => (
-                  <TouchableOpacity
-                    key={c}
-                    style={[styles.pill, form.travelDestination === c && styles.pillActive]}
-                    onPress={() => setForm((p) => ({ ...p, travelDestination: c }))}
-                  >
-                    <Text style={[styles.pillText, form.travelDestination === c && styles.pillTextActive]}>{c}</Text>
-                  </TouchableOpacity>
-                ))}
+                {COUNTRIES.map((c) => {
+                  const d = COUNTRY_DATA[c] || {};
+                  const active = form.travelDestination === c;
+                  return (
+                    <TouchableOpacity
+                      key={c}
+                      style={[styles.pill, active && styles.pillActive]}
+                      onPress={() => setForm((p) => ({ ...p, travelDestination: c }))}
+                      activeOpacity={0.75}
+                    >
+                      {active && (
+                        <View style={[styles.pillCode, { backgroundColor: C.brand }]}>
+                          <Text style={[styles.pillCodeText, { color: '#fff' }]}>{d.code || c.slice(0, 2).toUpperCase()}</Text>
+                        </View>
+                      )}
+                      <Text style={[styles.pillText, active && styles.pillTextActive]}>{c}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>항공사</Text>
               <View style={styles.pills}>
-                {AIRLINES.map((a) => (
-                  <TouchableOpacity
-                    key={a}
-                    style={[styles.pill, form.airline === a && styles.pillActive]}
-                    onPress={() => setForm((p) => ({ ...p, airline: a }))}
-                  >
-                    <Text style={[styles.pillText, form.airline === a && styles.pillTextActive]}>{a}</Text>
-                  </TouchableOpacity>
-                ))}
+                {AIRLINES.map((a) => {
+                  const d = AIRLINE_DATA[a] || {};
+                  const active = form.airline === a;
+                  return (
+                    <TouchableOpacity
+                      key={a}
+                      style={[styles.pill, active && styles.pillActive]}
+                      onPress={() => setForm((p) => ({ ...p, airline: a }))}
+                      activeOpacity={0.75}
+                    >
+                      {active && (
+                        <View style={[styles.pillCode, { backgroundColor: d.color || C.brand }]}>
+                          <Text style={[styles.pillCodeText, { color: '#fff' }]}>{d.code || a.slice(0, 2)}</Text>
+                        </View>
+                      )}
+                      <Text style={[styles.pillText, active && styles.pillTextActive]}>{a}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
@@ -121,11 +169,14 @@ export default function ProfileScreen({ navigation }) {
                 <Text style={styles.cancelBtnText}>취소</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleUpdate} disabled={loading}>
-                {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>저장</Text>}
+                {loading
+                  ? <ActivityIndicator color="#fff" size="small" />
+                  : <Text style={styles.saveBtnText}>저장</Text>}
               </TouchableOpacity>
             </View>
           </View>
         ) : (
+          /* Info display */
           <View style={styles.card}>
             <Text style={styles.cardTitle}>내 정보</Text>
             {[
@@ -154,59 +205,84 @@ export default function ProfileScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
+
   header: {
-    backgroundColor: '#1A1F36',
+    backgroundColor: C.ink,
     paddingTop: 56, paddingBottom: 32,
     alignItems: 'center',
   },
-  avatar: {
-    width: 76, height: 76, borderRadius: 22,
-    backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
-    marginBottom: 14, ...shadow.md,
+  avatarGradient: {
+    width: 84, height: 84, borderRadius: 42,
+    backgroundColor: C.brand,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 14,
+    borderWidth: 3, borderColor: 'rgba(255,255,255,0.2)',
+    ...shadow.brand,
   },
-  avatarText: { fontSize: 30, fontWeight: '800', color: '#fff' },
+  avatarText: { fontSize: 32, fontWeight: '900', color: '#fff' },
   nickname: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 4 },
-  userId: { fontSize: 14, color: 'rgba(255,255,255,0.5)' },
+  userId: { fontSize: 14, color: 'rgba(255,255,255,0.45)', marginBottom: 16 },
+
+  badgesRow: { flexDirection: 'row', gap: 8 },
+  headerBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
+  },
+  headerBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  headerBadgeLabel: { fontSize: 12, fontWeight: '600' },
+
   body: { padding: 16 },
+
   card: { backgroundColor: C.surface, borderRadius: 16, padding: 20, marginBottom: 12, ...shadow.sm },
-  cardTitle: { fontSize: 13, fontWeight: '700', color: C.textSec, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 16 },
+  cardTitle: {
+    fontSize: 11, fontWeight: '700', color: C.muted,
+    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16,
+  },
   infoRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border,
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line,
   },
-  infoLabel: { fontSize: 15, color: C.textSec },
-  infoValue: { fontSize: 15, fontWeight: '600', color: C.text },
+  infoLabel: { fontSize: 15, color: C.ink2 },
+  infoValue: { fontSize: 15, fontWeight: '600', color: C.ink },
+
   editBtn: {
-    marginTop: 16, backgroundColor: C.primaryLight,
+    marginTop: 16, backgroundColor: C.brandSoft,
     borderRadius: 12, paddingVertical: 14, alignItems: 'center',
   },
-  editBtnText: { color: C.primary, fontWeight: '700', fontSize: 15 },
+  editBtnText: { color: C.brand, fontWeight: '700', fontSize: 15 },
+
   field: { marginBottom: 18 },
-  fieldLabel: { fontSize: 13, fontWeight: '600', color: C.textSec, marginBottom: 8 },
+  fieldLabel: { fontSize: 13, fontWeight: '600', color: C.ink2, marginBottom: 8 },
   input: {
     backgroundColor: C.bg, borderRadius: 12,
     paddingHorizontal: 14, paddingVertical: 13,
-    fontSize: 15, color: C.text, borderWidth: 1.5, borderColor: C.border,
+    fontSize: 15, color: C.ink, borderWidth: 1.5, borderColor: C.line,
   },
+
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 999, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.bg,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 999, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.bg,
   },
-  pillActive: { backgroundColor: C.primary, borderColor: C.primary },
-  pillText: { fontSize: 13, color: C.textSec, fontWeight: '500' },
-  pillTextActive: { color: '#fff', fontWeight: '700' },
+  pillActive: { backgroundColor: C.brandSoft, borderColor: C.brand },
+  pillCode: { borderRadius: 4, paddingHorizontal: 5, paddingVertical: 2 },
+  pillCodeText: { fontSize: 9, fontWeight: '800' },
+  pillText: { fontSize: 13, color: C.ink2, fontWeight: '500' },
+  pillTextActive: { color: C.brand, fontWeight: '700' },
+
   editBtns: { flexDirection: 'row', gap: 8, marginTop: 4 },
   cancelBtn: {
     flex: 1, backgroundColor: C.bg, borderRadius: 12,
-    paddingVertical: 14, alignItems: 'center', borderWidth: 1.5, borderColor: C.border,
+    paddingVertical: 14, alignItems: 'center', borderWidth: 1.5, borderColor: C.line,
   },
-  cancelBtnText: { color: C.textSec, fontWeight: '600' },
-  saveBtn: { flex: 1, backgroundColor: C.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  cancelBtnText: { color: C.ink2, fontWeight: '600' },
+  saveBtn: { flex: 1, backgroundColor: C.brand, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   saveBtnText: { color: '#fff', fontWeight: '700' },
+
   logoutBtn: {
     backgroundColor: C.surface, borderRadius: 16, paddingVertical: 17,
-    alignItems: 'center', borderWidth: 1.5, borderColor: '#FECACA', ...shadow.sm,
+    alignItems: 'center', borderWidth: 1.5, borderColor: C.noSoft, ...shadow.sm,
   },
-  logoutText: { color: C.error, fontWeight: '700', fontSize: 15 },
+  logoutText: { color: C.no, fontWeight: '700', fontSize: 15 },
 });
