@@ -300,8 +300,8 @@ const s = StyleSheet.create({
   headerSub:   { fontSize: 13, color: C.muted, fontWeight: '500', marginTop: 2 },
 
   /* Page tabs */
-  tabScrollWrap: { backgroundColor: C.bg, flexShrink: 0 },
-  tabScroll:     { paddingHorizontal: 18, paddingVertical: 12, gap: 8, alignItems: 'center' },
+  tabScrollWrap: { backgroundColor: C.bg, height: 62 },
+  tabScroll:     { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 14, gap: 8 },
   tabBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 7,
     height: 38, paddingHorizontal: 14, borderRadius: 999,
