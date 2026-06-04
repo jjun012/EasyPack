@@ -112,32 +112,33 @@ export default function BaggageScreen() {
         </View>
       </View>
 
-      {/* ── Page tabs ── */}
-      <ScrollView
-        horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={s.tabScroll}
-        style={s.tabScrollWrap}
-      >
-        {TABS.map((t, i) => {
-          const vc     = V_COLOR[t.verdict];
-          const active = i === pageIndex;
-          return (
-            <TouchableOpacity
-              key={t.key}
-              style={[s.tabBtn, active && s.tabBtnActive]}
-              onPress={() => goPage(i)}
-              activeOpacity={0.75}
-            >
-              <View style={[s.tabDot, { backgroundColor: vc.main }]} />
-              <Text style={[s.tabBtnText, active && s.tabBtnTextActive]}>{t.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      {/* ── Page tabs — View wrapper guarantees height ── */}
+      <View style={s.tabBar}>
+        <ScrollView
+          horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.tabScroll}
+        >
+          {TABS.map((t, i) => {
+            const vc     = V_COLOR[t.verdict];
+            const active = i === pageIndex;
+            return (
+              <TouchableOpacity
+                key={t.key}
+                style={[s.tabBtn, active && s.tabBtnActive]}
+                onPress={() => goPage(i)}
+                activeOpacity={0.75}
+              >
+                <View style={[s.tabDot, { backgroundColor: vc.main }]} />
+                <Text style={[s.tabBtnText, active && s.tabBtnTextActive]}>{t.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {/* ── Scrollable body ── */}
       <ScrollView
-        style={{ flex: 1 }}
+        style={s.bodyScroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={s.body}
         key={pageIndex}
@@ -300,8 +301,9 @@ const s = StyleSheet.create({
   headerSub:   { fontSize: 13, color: C.muted, fontWeight: '500', marginTop: 2 },
 
   /* Page tabs */
-  tabScrollWrap: { backgroundColor: C.bg, height: 62 },
-  tabScroll:     { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 14, gap: 8 },
+  tabBar:    { height: 62, backgroundColor: C.bg, justifyContent: 'center' },
+  tabScroll: { paddingHorizontal: 18, gap: 8, alignItems: 'center' },
+  bodyScroll: { flex: 1 },
   tabBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 7,
     height: 38, paddingHorizontal: 14, borderRadius: 999,
