@@ -12,6 +12,7 @@ spring:
       data-source-properties:
         ssl: true
         sslmode: require
+        options: project=rktozresjijfertgcqet
   jpa:
     hibernate:
       ddl-auto: update
