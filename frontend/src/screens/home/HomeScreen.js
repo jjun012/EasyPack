@@ -58,8 +58,10 @@ export default function HomeScreen({ navigation }) {
       if (u) setUser(u);
       const posts = await api.get('/api/community/posts/popular');
       setPopularPosts(posts);
-      if (u?.travelDestination && CITY_DATA[u.travelDestination]) {
-        fetchWeather(u.travelDestination);
+      const d = u?.travelDestination;
+      if (d) {
+        const weatherCity = CITY_DATA[d] ? d : (COUNTRY_DATA[d] ? COUNTRY_DATA[d].city : null);
+        if (weatherCity) fetchWeather(weatherCity);
       }
     } catch (e) {
     } finally {
@@ -91,9 +93,10 @@ export default function HomeScreen({ navigation }) {
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color={C.brand} />;
 
-  const dest        = user?.travelDestination;
-  const cityInfo    = CITY_DATA[dest] || {};
-  const country     = cityInfo.country;
+  const dest = user?.travelDestination;
+  // dest가 도시명("방콕")이면 직접 조회, 국가명("태국")이면 COUNTRY_DATA 기본 도시로 폴백
+  const cityInfo    = CITY_DATA[dest] || (COUNTRY_DATA[dest] ? CITY_DATA[COUNTRY_DATA[dest].city] || {} : {});
+  const country     = cityInfo.country || (COUNTRY_DATA[dest] ? dest : null);
   const countryInfo = COUNTRY_DATA[country] || {};
   const airlineInfo = AIRLINE_DATA[user?.airline] || {};
   const hasCity     = !!country;
