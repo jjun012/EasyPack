@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 13, fontWeight: '600', color: C.ink2 },
   tabTextActive: { color: '#fff' },
 
-  list: { padding: 16, paddingBottom: 24 },
+  list: { padding: 16, paddingBottom: 100 },
 
   card: {
     backgroundColor: C.surface, borderRadius: 16, padding: 16,

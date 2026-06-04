@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BlurView } from 'expo-blur';
+import { Feather } from '@expo/vector-icons';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
@@ -21,37 +23,43 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import { C, shadow } from '../constants/theme';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab   = createBottomTabNavigator();
 
-const TAB_CONFIG = {
-  Home:      { emoji: '🏠', label: '홈' },
-  Community: { emoji: '💬', label: '커뮤니티' },
-  Camera:    { emoji: '◎',  label: '분석', center: true },
-  Baggage:   { emoji: '🧳', label: '수하물' },
-  Profile:   { emoji: '👤', label: '내정보' },
-};
+/* ── Tab config ──────────────────────────────── */
+const TABS = [
+  { name: 'Home',      icon: 'home',          label: '홈' },
+  { name: 'Community', icon: 'message-square', label: '커뮤니티' },
+  { name: 'Camera',    icon: 'maximize',       label: null, fab: true },
+  { name: 'Baggage',   icon: 'briefcase',      label: '수하물' },
+  { name: 'Profile',   icon: 'user',           label: '내 정보' },
+];
 
 function TabIcon({ name, focused }) {
-  const cfg = TAB_CONFIG[name] || {};
+  const cfg = TABS.find((t) => t.name === name) || {};
 
-  if (cfg.center) {
+  if (cfg.fab) {
     return (
-      <View style={tabStyles.centerIcon}>
-        <Text style={tabStyles.centerEmoji}>{cfg.emoji}</Text>
+      <View style={tabStyles.fab}>
+        <Feather name="maximize" size={24} color="#fff" />
       </View>
     );
   }
 
   return (
     <View style={tabStyles.iconWrap}>
-      <Text style={[tabStyles.emoji, { opacity: focused ? 1 : 0.45 }]}>{cfg.emoji}</Text>
+      <Feather
+        name={cfg.icon}
+        size={22}
+        color={focused ? C.brand : '#9AA4B8'}
+        strokeWidth={focused ? 2.2 : 1.8}
+      />
     </View>
   );
 }
 
 function TabLabel({ name, focused }) {
-  const cfg = TAB_CONFIG[name] || {};
-  if (cfg.center) return null;
+  const cfg = TABS.find((t) => t.name === name) || {};
+  if (!cfg.label) return null;
   return (
     <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>
       {cfg.label}
@@ -59,29 +67,82 @@ function TabLabel({ name, focused }) {
   );
 }
 
+/* ── Custom frosted-glass tab bar ─────────────── */
+function CustomTabBar({ state, descriptors, navigation }) {
+  return (
+    <View style={tabStyles.barWrap} pointerEvents="box-none">
+      <BlurView intensity={60} tint="light" style={tabStyles.bar}>
+        {state.routes.map((route, index) => {
+          const cfg     = TABS.find((t) => t.name === route.name) || {};
+          const focused = state.index === index;
+          const { options } = descriptors[route.key];
+
+          const onPress = () => {
+            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
+          };
+
+          if (cfg.fab) {
+            return (
+              <View key={route.key} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <View
+                  style={tabStyles.fab}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel="물품 촬영"
+                  onStartShouldSetResponder={() => true}
+                  onResponderGrant={onPress}
+                >
+                  <Feather name="maximize" size={24} color="#fff" />
+                </View>
+              </View>
+            );
+          }
+
+          return (
+            <View
+              key={route.key}
+              style={tabStyles.tab}
+              accessible
+              accessibilityRole="button"
+              onStartShouldSetResponder={() => true}
+              onResponderGrant={onPress}
+            >
+              <Feather
+                name={cfg.icon}
+                size={22}
+                color={focused ? C.brand : '#9AA4B8'}
+              />
+              {cfg.label && (
+                <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>
+                  {cfg.label}
+                </Text>
+              )}
+            </View>
+          );
+        })}
+      </BlurView>
+    </View>
+  );
+}
+
+/* ── Main tabs ───────────────────────────────── */
 function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
-        tabBarLabel: ({ focused }) => <TabLabel name={route.name} focused={focused} />,
-        headerShown: false,
-        tabBarStyle: tabStyles.bar,
-      })}
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home"      component={HomeScreen} />
       <Tab.Screen name="Community" component={CommunityStack} />
-      <Tab.Screen
-        name="Camera"
-        component={CameraScreen}
-        options={{ tabBarStyle: { display: 'none' } }}
-      />
-      <Tab.Screen name="Baggage" component={BaggageScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Camera"    component={CameraScreen} />
+      <Tab.Screen name="Baggage"   component={BaggageScreen} />
+      <Tab.Screen name="Profile"   component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
 
+/* ── Community stack ─────────────────────────── */
 function CommunityStack() {
   return (
     <Stack.Navigator
@@ -93,14 +154,15 @@ function CommunityStack() {
       }}
     >
       <Stack.Screen name="Community" component={CommunityScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="PostList" component={PostListScreen} options={{ title: '커뮤니티' }} />
+      <Stack.Screen name="PostList"  component={PostListScreen}  options={{ title: '커뮤니티' }} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: '여행 후기' }} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ title: '글 작성' }} />
-      <Stack.Screen name="EditPost" component={EditPostScreen} options={{ title: '게시글 수정' }} />
+      <Stack.Screen name="EditPost"   component={EditPostScreen}   options={{ title: '게시글 수정' }} />
     </Stack.Navigator>
   );
 }
 
+/* ── Root navigator ──────────────────────────── */
 export default function AppNavigator() {
   const [initialRoute, setInitialRoute] = useState(null);
 
@@ -158,6 +220,7 @@ export default function AppNavigator() {
   );
 }
 
+/* ── Auth stack ──────────────────────────────── */
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -179,38 +242,59 @@ function AuthStack() {
   );
 }
 
+/* ── Styles ──────────────────────────────────── */
 const tabStyles = StyleSheet.create({
-  bar: {
-    backgroundColor: C.surface,
-    borderTopWidth: 1,
-    borderTopColor: C.line2,
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 22 : 8,
-    height: Platform.OS === 'ios' ? 82 : 60,
+  /* floating pill container */
+  barWrap: {
+    position: 'absolute',
+    left: 12, right: 12,
+    bottom: Platform.OS === 'ios' ? 20 : 14,
+    height: 64,
+    borderRadius: 999,
+    overflow: 'hidden',
+    /* inner highlight ring */
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.65)',
     shadowColor: '#0E1A33',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: -3 },
-    elevation: 8,
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+  bar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.95)' : 'transparent',
+  },
+
+  /* regular tab */
+  tab: {
+    flex: 1,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
   },
   iconWrap: { alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 22 },
-  label: { fontSize: 10, fontWeight: '500', color: C.faint, marginTop: 2 },
-  labelActive: { color: C.brand, fontWeight: '700' },
+  label: {
+    fontSize: 10.5, fontWeight: '700', color: '#9AA4B8', letterSpacing: -0.1,
+  },
+  labelActive: { color: C.brand },
 
-  /* Center (Camera) */
-  centerIcon: {
-    width: 48, height: 48, borderRadius: 14,
+  /* FAB (camera) */
+  fab: {
+    width: 54, height: 54, borderRadius: 999,
     backgroundColor: C.brand,
     alignItems: 'center', justifyContent: 'center',
-    marginTop: -10,
+    marginTop: -22,
     shadowColor: C.brand,
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+    shadowOpacity: 0.38,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
-  centerEmoji: { fontSize: 21, color: '#fff' },
 });
 
 const splashStyles = StyleSheet.create({
@@ -223,7 +307,7 @@ const splashStyles = StyleSheet.create({
     backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center',
     marginBottom: 16,
   },
-  logoText: { color: C.brand, fontWeight: '900', fontSize: 26, letterSpacing: -1 },
-  wordmark: { fontSize: 24, fontWeight: '400', color: C.ink, letterSpacing: -0.5 },
-  wordmarkBold: { fontWeight: '800', color: C.brand },
+  logoText:    { color: C.brand, fontWeight: '900', fontSize: 26, letterSpacing: -1 },
+  wordmark:    { fontSize: 24, fontWeight: '400', color: C.ink, letterSpacing: -0.5 },
+  wordmarkBold:{ fontWeight: '800', color: C.brand },
 });
