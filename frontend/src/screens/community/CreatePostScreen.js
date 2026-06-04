@@ -3,9 +3,9 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator, ScrollView,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { api } from '../../api/client';
 import { COUNTRIES } from '../../constants/config';
+import { C, shadow } from '../../constants/theme';
 
 export default function CreatePostScreen({ route, navigation }) {
   const initialCountry = route.params?.country || COUNTRIES[0];
@@ -32,64 +32,91 @@ export default function CreatePostScreen({ route, navigation }) {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.label}>여행 국가</Text>
-      <View style={styles.pickerWrapper}>
-        <Picker selectedValue={country} onValueChange={setCountry}>
-          {COUNTRIES.map((c) => <Picker.Item key={c} label={c} value={c} />)}
-        </Picker>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>여행 국가</Text>
+        <View style={styles.pills}>
+          {COUNTRIES.map((c) => (
+            <TouchableOpacity
+              key={c}
+              style={[styles.pill, country === c && styles.pillActive]}
+              onPress={() => setCountry(c)}
+            >
+              <Text style={[styles.pillText, country === c && styles.pillTextActive]}>{c}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
-      <Text style={styles.label}>별점</Text>
-      <View style={styles.stars}>
-        {[1, 2, 3, 4, 5].map((s) => (
-          <TouchableOpacity key={s} onPress={() => setRating(s)}>
-            <Text style={styles.star}>{s <= rating ? '⭐' : '☆'}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>별점</Text>
+        <View style={styles.stars}>
+          {[1, 2, 3, 4, 5].map((s) => (
+            <TouchableOpacity key={s} onPress={() => setRating(s)} style={styles.starBtn}>
+              <Text style={[styles.star, s <= rating && styles.starActive]}>★</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
-      <Text style={styles.label}>제목</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="제목을 입력하세요"
-        value={title}
-        onChangeText={setTitle}
-        maxLength={200}
-      />
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>제목</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="제목을 입력하세요"
+          placeholderTextColor={C.textMuted}
+          value={title}
+          onChangeText={setTitle}
+          maxLength={200}
+        />
+      </View>
 
-      <Text style={styles.label}>내용</Text>
-      <TextInput
-        style={[styles.input, styles.textarea]}
-        placeholder="여행 후기를 자유롭게 작성해보세요"
-        value={content}
-        onChangeText={setContent}
-        multiline
-        textAlignVertical="top"
-      />
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>내용</Text>
+        <TextInput
+          style={[styles.input, styles.textarea]}
+          placeholder="여행 후기를 자유롭게 작성해보세요"
+          placeholderTextColor={C.textMuted}
+          value={content}
+          onChangeText={setContent}
+          multiline
+          textAlignVertical="top"
+        />
+      </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>게시글 작성</Text>}
+      <TouchableOpacity style={styles.btn} onPress={handleSubmit} disabled={loading}>
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>게시글 작성</Text>}
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#555', marginBottom: 6, marginTop: 12 },
-  pickerWrapper: { borderWidth: 1, borderColor: '#ddd', borderRadius: 10, marginBottom: 4 },
-  stars: { flexDirection: 'row', marginBottom: 8 },
-  star: { fontSize: 28, marginRight: 4 },
+  container: { flex: 1, backgroundColor: C.bg },
+  content: { padding: 20, paddingBottom: 48 },
+  section: { backgroundColor: C.surface, borderRadius: 16, padding: 18, marginBottom: 12, ...shadow.sm },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: C.textSec, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pill: {
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 999, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.bg,
+  },
+  pillActive: { backgroundColor: C.primary, borderColor: C.primary },
+  pillText: { fontSize: 14, color: C.textSec, fontWeight: '500' },
+  pillTextActive: { color: '#fff', fontWeight: '700' },
+  stars: { flexDirection: 'row', gap: 6 },
+  starBtn: { padding: 4 },
+  star: { fontSize: 28, color: C.border },
+  starActive: { color: '#F59E0B' },
   input: {
-    borderWidth: 1, borderColor: '#ddd', borderRadius: 10,
-    padding: 14, fontSize: 15, marginBottom: 4,
+    backgroundColor: C.bg, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 13,
+    fontSize: 15, color: C.text, borderWidth: 1.5, borderColor: C.border,
   },
-  textarea: { height: 180 },
-  button: {
-    backgroundColor: '#4A90E2', borderRadius: 10,
-    padding: 16, alignItems: 'center', marginTop: 20,
+  textarea: { height: 180, paddingTop: 13 },
+  btn: {
+    backgroundColor: C.primary, borderRadius: 14,
+    paddingVertical: 17, alignItems: 'center',
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

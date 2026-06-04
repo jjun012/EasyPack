@@ -5,6 +5,9 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../api/client';
+import { C, shadow } from '../../constants/theme';
+
+const FLAG = { '일본': '🇯🇵', '미국': '🇺🇸', '베트남': '🇻🇳', '필리핀': '🇵🇭', '태국': '🇹🇭' };
 
 export default function PostDetailScreen({ route, navigation }) {
   const { postId } = route.params;
@@ -15,15 +18,12 @@ export default function PostDetailScreen({ route, navigation }) {
   const [myUserId, setMyUserId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadAll();
-  }, []);
+  useEffect(() => { loadAll(); }, []);
 
   async function loadAll() {
     try {
       const stored = await AsyncStorage.getItem('user');
       if (stored) setMyUserId(JSON.parse(stored).userId);
-
       const [postData, commentsData, likeData] = await Promise.all([
         api.get(`/api/community/post/${postId}`),
         api.get(`/api/community/post/${postId}/comments`),
@@ -91,65 +91,93 @@ export default function PostDetailScreen({ route, navigation }) {
     ]);
   }
 
-  if (loading) return <ActivityIndicator style={{ flex: 1 }} color="#4A90E2" />;
-  if (!post) return <Text style={{ textAlign: 'center', marginTop: 40 }}>게시글을 찾을 수 없어요.</Text>;
+  if (loading) return <ActivityIndicator style={{ flex: 1 }} color={C.primary} />;
+  if (!post) return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text style={{ color: C.textSec }}>게시글을 찾을 수 없어요.</Text>
+    </View>
+  );
 
   const isAuthor = post.authorNickname === myUserId;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.postBox}>
-          <View style={styles.postHeader}>
-            <Text style={styles.country}>{post.country}</Text>
-            <Text style={styles.rating}>{'⭐'.repeat(post.rating)}</Text>
+          <View style={styles.badges}>
+            <View style={styles.countryBadge}>
+              <Text style={styles.countryBadgeText}>
+                {FLAG[post.country]} {post.country}
+              </Text>
+            </View>
+            <Text style={styles.rating}>{'★'.repeat(post.rating)}</Text>
           </View>
+
           <Text style={styles.title}>{post.title}</Text>
-          <Text style={styles.author}>{post.authorNickname}</Text>
+          <Text style={styles.author}>by {post.authorNickname}</Text>
+          <View style={styles.divider} />
           <Text style={styles.content}>{post.content}</Text>
 
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.likeBtn} onPress={toggleLike}>
-              <Text style={styles.likeBtnText}>{liked ? '❤️' : '🤍'} {post.likeCount}</Text>
+            <TouchableOpacity
+              style={[styles.likeBtn, liked && styles.likeBtnActive]}
+              onPress={toggleLike}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.likeBtnText, liked && styles.likeBtnTextActive]}>
+                {liked ? '♥' : '♡'} {post.likeCount}
+              </Text>
             </TouchableOpacity>
             {isAuthor && (
-              <View style={styles.authorActions}>
-                <TouchableOpacity onPress={() => navigation.navigate('EditPost', { post })}>
-                  <Text style={styles.editText}>수정</Text>
+              <View style={styles.authorBtns}>
+                <TouchableOpacity
+                  style={styles.editBtn}
+                  onPress={() => navigation.navigate('EditPost', { post })}
+                >
+                  <Text style={styles.editBtnText}>수정</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={deletePost}>
-                  <Text style={styles.deleteText}>삭제</Text>
+                <TouchableOpacity style={styles.deleteBtn} onPress={deletePost}>
+                  <Text style={styles.deleteBtnText}>삭제</Text>
                 </TouchableOpacity>
               </View>
             )}
           </View>
         </View>
 
-        <Text style={styles.commentTitle}>댓글 {comments.length}개</Text>
-        {comments.map((c) => (
-          <View key={c.id} style={styles.commentBox}>
-            <View style={styles.commentHeader}>
-              <Text style={styles.commentAuthor}>{c.authorNickname}</Text>
-              {c.userId === myUserId && (
-                <TouchableOpacity onPress={() => deleteComment(c.id)}>
-                  <Text style={styles.deleteText}>삭제</Text>
-                </TouchableOpacity>
-              )}
+        <View style={styles.commentsSection}>
+          <Text style={styles.commentTitle}>댓글 {comments.length}</Text>
+          {comments.map((c) => (
+            <View key={c.id} style={styles.commentCard}>
+              <View style={styles.commentHeader}>
+                <View style={styles.commentAvatarBox}>
+                  <Text style={styles.commentAvatarText}>{c.authorNickname?.[0] || '?'}</Text>
+                </View>
+                <Text style={styles.commentAuthor}>{c.authorNickname}</Text>
+                {c.userId === myUserId && (
+                  <TouchableOpacity onPress={() => deleteComment(c.id)} style={styles.commentDelete}>
+                    <Text style={styles.commentDeleteText}>삭제</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <Text style={styles.commentContent}>{c.content}</Text>
             </View>
-            <Text style={styles.commentContent}>{c.content}</Text>
-          </View>
-        ))}
-        <View style={{ height: 80 }} />
+          ))}
+          <View style={{ height: 90 }} />
+        </View>
       </ScrollView>
 
-      <View style={styles.commentInput}>
+      <View style={styles.inputBar}>
         <TextInput
           style={styles.input}
           placeholder="댓글을 입력하세요..."
+          placeholderTextColor={C.textMuted}
           value={commentText}
           onChangeText={setCommentText}
         />
-        <TouchableOpacity style={styles.sendBtn} onPress={submitComment}>
+        <TouchableOpacity
+          style={[styles.sendBtn, !commentText.trim() && styles.sendBtnDisabled]}
+          onPress={submitComment}
+        >
           <Text style={styles.sendText}>전송</Text>
         </TouchableOpacity>
       </View>
@@ -158,33 +186,65 @@ export default function PostDetailScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  postBox: { backgroundColor: '#fff', padding: 20, marginBottom: 8 },
-  postHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  country: { fontSize: 13, color: '#4A90E2', fontWeight: '600' },
-  rating: { fontSize: 13 },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#222', marginBottom: 4 },
-  author: { fontSize: 13, color: '#999', marginBottom: 16 },
-  content: { fontSize: 15, color: '#444', lineHeight: 24 },
-  actions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, alignItems: 'center' },
-  likeBtn: { padding: 8 },
-  likeBtnText: { fontSize: 18 },
-  authorActions: { flexDirection: 'row', gap: 16 },
-  editText: { color: '#4A90E2', fontSize: 14 },
-  deleteText: { color: '#e74c3c', fontSize: 14 },
-  commentTitle: { fontSize: 16, fontWeight: 'bold', padding: 16, paddingBottom: 8 },
-  commentBox: { backgroundColor: '#fff', padding: 14, marginHorizontal: 8, marginBottom: 6, borderRadius: 10 },
-  commentHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  commentAuthor: { fontSize: 13, fontWeight: '600', color: '#555' },
-  commentContent: { fontSize: 14, color: '#444', lineHeight: 20 },
-  commentInput: {
-    flexDirection: 'row', backgroundColor: '#fff',
-    padding: 12, borderTopWidth: 1, borderTopColor: '#eee',
+  container: { flex: 1, backgroundColor: C.bg },
+  postBox: { backgroundColor: C.surface, padding: 24, marginBottom: 8 },
+  badges: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  countryBadge: {
+    backgroundColor: C.primaryLight, borderRadius: 999,
+    paddingHorizontal: 12, paddingVertical: 5,
+  },
+  countryBadgeText: { fontSize: 13, color: C.primary, fontWeight: '600' },
+  rating: { fontSize: 14, color: '#F59E0B', letterSpacing: 2 },
+  title: { fontSize: 22, fontWeight: '800', color: C.text, letterSpacing: -0.5, marginBottom: 6 },
+  author: { fontSize: 13, color: C.textMuted, marginBottom: 16 },
+  divider: { height: 1, backgroundColor: C.border, marginBottom: 16 },
+  content: { fontSize: 15, color: C.textSec, lineHeight: 26 },
+  actions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 24 },
+  likeBtn: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 18, paddingVertical: 10,
+    borderRadius: 999, borderWidth: 1.5, borderColor: C.border,
+  },
+  likeBtnActive: { backgroundColor: '#FEE2E2', borderColor: '#EF4444' },
+  likeBtnText: { fontSize: 15, color: C.textSec, fontWeight: '600' },
+  likeBtnTextActive: { color: '#EF4444' },
+  authorBtns: { flexDirection: 'row', gap: 8 },
+  editBtn: {
+    paddingHorizontal: 16, paddingVertical: 9,
+    borderRadius: 999, backgroundColor: C.primaryLight,
+  },
+  editBtnText: { color: C.primary, fontSize: 13, fontWeight: '600' },
+  deleteBtn: {
+    paddingHorizontal: 16, paddingVertical: 9,
+    borderRadius: 999, backgroundColor: '#FEE2E2',
+  },
+  deleteBtnText: { color: C.error, fontSize: 13, fontWeight: '600' },
+  commentsSection: { paddingHorizontal: 16, paddingTop: 8 },
+  commentTitle: { fontSize: 15, fontWeight: '700', color: C.text, marginBottom: 12 },
+  commentCard: { backgroundColor: C.surface, borderRadius: 14, padding: 14, marginBottom: 8, ...shadow.sm },
+  commentHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
+  commentAvatarBox: {
+    width: 28, height: 28, borderRadius: 8,
+    backgroundColor: C.primaryLight, alignItems: 'center', justifyContent: 'center',
+  },
+  commentAvatarText: { fontSize: 12, fontWeight: '700', color: C.primary },
+  commentAuthor: { fontSize: 13, fontWeight: '600', color: C.text, flex: 1 },
+  commentDelete: { marginLeft: 'auto' },
+  commentDeleteText: { fontSize: 12, color: C.error },
+  commentContent: { fontSize: 14, color: C.textSec, lineHeight: 20 },
+  inputBar: {
+    flexDirection: 'row', backgroundColor: C.surface,
+    padding: 12, borderTopWidth: 1, borderTopColor: C.border, gap: 8,
   },
   input: {
-    flex: 1, borderWidth: 1, borderColor: '#ddd',
-    borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, fontSize: 14,
+    flex: 1, backgroundColor: C.bg,
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
+    fontSize: 14, color: C.text, borderWidth: 1, borderColor: C.border,
   },
-  sendBtn: { marginLeft: 8, backgroundColor: '#4A90E2', borderRadius: 20, paddingHorizontal: 16, justifyContent: 'center' },
-  sendText: { color: '#fff', fontWeight: 'bold' },
+  sendBtn: {
+    backgroundColor: C.primary, borderRadius: 12,
+    paddingHorizontal: 18, justifyContent: 'center',
+  },
+  sendBtnDisabled: { backgroundColor: C.border },
+  sendText: { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

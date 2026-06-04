@@ -4,6 +4,7 @@ import {
   StyleSheet, TextInput,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { C, shadow } from '../../constants/theme';
 
 const BAGGAGE_RULES = {
   '대한항공':    { weight: 23, fee: 100 },
@@ -16,6 +17,12 @@ const BAGGAGE_RULES = {
 const PROHIBITED = ['폭발물', '인화성 물질', '독성 물질', '방사성 물질', '압축가스', '산화성 물질'];
 const RESTRICTED = ['액체류 (100ml 초과)', '보조배터리 (160Wh 초과)', '라이터 (위탁 불가)', '칼·가위류 (기내 반입 불가)'];
 const CHECKED_ONLY = ['스포츠 장비', '자전거', '서핑보드', '골프채'];
+
+const SECTIONS = [
+  { title: '반입 금지', items: PROHIBITED, color: C.error, bg: C.errorBg, indicator: '금지' },
+  { title: '제한 반입', items: RESTRICTED, color: C.warning, bg: C.warningBg, indicator: '제한' },
+  { title: '위탁 전용', items: CHECKED_ONLY, color: '#6366F1', bg: '#EEF2FF', indicator: '위탁' },
+];
 
 export default function BaggageScreen() {
   const [airline, setAirline] = useState('대한항공');
@@ -39,86 +46,105 @@ export default function BaggageScreen() {
   const rule = BAGGAGE_RULES[airline] || BAGGAGE_RULES['대한항공'];
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🚫 반입 금지 물품</Text>
-        {PROHIBITED.map((item) => (
-          <View key={item} style={styles.row}>
-            <Text style={styles.dot}>•</Text>
-            <Text style={styles.rowText}>{item}</Text>
-          </View>
-        ))}
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>수하물 가이드</Text>
+        <Text style={styles.headerSub}>기내 반입 규정과 초과 요금을 확인하세요</Text>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⚠️ 제한적 반입 물품</Text>
-        {RESTRICTED.map((item) => (
-          <View key={item} style={styles.row}>
-            <Text style={styles.dot}>•</Text>
-            <Text style={styles.rowText}>{item}</Text>
+      <View style={styles.body}>
+        {SECTIONS.map(({ title, items, color, bg, indicator }) => (
+          <View key={title} style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.indicatorBadge, { backgroundColor: bg }]}>
+                <Text style={[styles.indicatorText, { color }]}>{indicator}</Text>
+              </View>
+              <Text style={styles.cardTitle}>{title}</Text>
+            </View>
+            {items.map((item) => (
+              <View key={item} style={styles.itemRow}>
+                <View style={[styles.dot, { backgroundColor: color }]} />
+                <Text style={styles.itemText}>{item}</Text>
+              </View>
+            ))}
           </View>
         ))}
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🧳 위탁 수하물만 가능</Text>
-        {CHECKED_ONLY.map((item) => (
-          <View key={item} style={styles.row}>
-            <Text style={styles.dot}>•</Text>
-            <Text style={styles.rowText}>{item}</Text>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.indicatorBadge, { backgroundColor: C.primaryLight }]}>
+              <Text style={[styles.indicatorText, { color: C.primary }]}>계산기</Text>
+            </View>
+            <Text style={styles.cardTitle}>초과 요금 계산</Text>
           </View>
-        ))}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💰 초과 요금 계산기</Text>
-        <Text style={styles.info}>{airline} · 기본 허용 {rule.weight}kg · 초과 시 kg당 ${rule.fee}</Text>
-        <View style={styles.calcRow}>
-          <TextInput
-            style={styles.calcInput}
-            placeholder="실제 무게 (kg)"
-            value={weight}
-            onChangeText={setWeight}
-            keyboardType="decimal-pad"
-          />
-          <TouchableOpacity style={styles.calcButton} onPress={calcFee}>
-            <Text style={styles.calcButtonText}>계산</Text>
-          </TouchableOpacity>
+          <View style={styles.ruleInfo}>
+            <Text style={styles.ruleAirline}>{airline}</Text>
+            <Text style={styles.ruleDetail}>기본 허용 {rule.weight}kg · 초과 kg당 ${rule.fee}</Text>
+          </View>
+          <View style={styles.calcRow}>
+            <TextInput
+              style={styles.calcInput}
+              placeholder="실제 무게 입력 (kg)"
+              placeholderTextColor={C.textMuted}
+              value={weight}
+              onChangeText={setWeight}
+              keyboardType="decimal-pad"
+            />
+            <TouchableOpacity style={styles.calcBtn} onPress={calcFee}>
+              <Text style={styles.calcBtnText}>계산</Text>
+            </TouchableOpacity>
+          </View>
+          {fee !== null && (
+            <View style={[styles.feeResult, { backgroundColor: fee === 0 ? C.successBg : C.warningBg }]}>
+              <Text style={[styles.feeText, { color: fee === 0 ? C.success : C.warning }]}>
+                {fee === 0 ? '초과 요금 없음' : `예상 초과 요금 $${fee}`}
+              </Text>
+              <Text style={[styles.feeSub, { color: fee === 0 ? C.success : C.warning }]}>
+                {fee === 0 ? '허용 범위 내예요' : `${parseFloat(weight) - rule.weight}kg 초과`}
+              </Text>
+            </View>
+          )}
         </View>
-        {fee !== null && (
-          <View style={[styles.feeResult, { backgroundColor: fee === 0 ? '#eafaf1' : '#fef9ec' }]}>
-            <Text style={[styles.feeText, { color: fee === 0 ? '#27AE60' : '#e67e22' }]}>
-              {fee === 0 ? '✅ 초과 요금 없음' : `⚠️ 예상 초과 요금: $${fee}`}
-            </Text>
-          </View>
-        )}
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  section: {
-    backgroundColor: '#fff', margin: 12, marginBottom: 0,
-    borderRadius: 12, padding: 16,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  container: { flex: 1, backgroundColor: C.bg },
+  header: {
+    backgroundColor: '#1A1F36', paddingTop: 56,
+    paddingHorizontal: 24, paddingBottom: 28,
   },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#222', marginBottom: 12 },
-  row: { flexDirection: 'row', marginBottom: 8 },
-  dot: { color: '#4A90E2', marginRight: 8, fontSize: 16 },
-  rowText: { fontSize: 14, color: '#444', flex: 1, lineHeight: 20 },
-  info: { fontSize: 13, color: '#888', marginBottom: 12 },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: '#fff', letterSpacing: -0.5, marginBottom: 4 },
+  headerSub: { fontSize: 14, color: 'rgba(255,255,255,0.6)' },
+  body: { padding: 16 },
+  card: { backgroundColor: C.surface, borderRadius: 16, padding: 18, marginBottom: 12, ...shadow.sm },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  indicatorBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  indicatorText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: C.text },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  itemText: { fontSize: 14, color: C.textSec, flex: 1 },
+  ruleInfo: {
+    backgroundColor: C.bg, borderRadius: 12, padding: 14, marginBottom: 14,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  },
+  ruleAirline: { fontSize: 15, fontWeight: '700', color: C.text },
+  ruleDetail: { fontSize: 13, color: C.textSec },
   calcRow: { flexDirection: 'row', gap: 8 },
   calcInput: {
-    flex: 1, borderWidth: 1, borderColor: '#ddd',
-    borderRadius: 8, padding: 12, fontSize: 15,
+    flex: 1, backgroundColor: C.bg, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 13,
+    fontSize: 15, color: C.text, borderWidth: 1.5, borderColor: C.border,
   },
-  calcButton: {
-    backgroundColor: '#4A90E2', borderRadius: 8,
+  calcBtn: {
+    backgroundColor: C.primary, borderRadius: 12,
     paddingHorizontal: 20, justifyContent: 'center',
   },
-  calcButtonText: { color: '#fff', fontWeight: 'bold' },
-  feeResult: { marginTop: 12, borderRadius: 8, padding: 14 },
-  feeText: { fontSize: 15, fontWeight: 'bold', textAlign: 'center' },
+  calcBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  feeResult: { marginTop: 12, borderRadius: 12, padding: 16, alignItems: 'center' },
+  feeText: { fontSize: 17, fontWeight: '800', marginBottom: 2 },
+  feeSub: { fontSize: 13 },
 });

@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, ScrollView,
+  Alert, ActivityIndicator, ScrollView, TextInput,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../api/client';
 import { COUNTRIES, AIRLINES } from '../../constants/config';
+import { C, shadow } from '../../constants/theme';
 
 export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(null);
@@ -16,9 +16,7 @@ export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   useFocusEffect(
-    useCallback(() => {
-      loadUser();
-    }, [])
+    useCallback(() => { loadUser(); }, [])
   );
 
   async function loadUser() {
@@ -59,62 +57,83 @@ export default function ProfileScreen({ navigation }) {
     ]);
   }
 
-  if (!user) return <ActivityIndicator style={{ flex: 1 }} color="#4A90E2" />;
+  if (!user) return <ActivityIndicator style={{ flex: 1 }} color={C.primary} />;
+
+  const initial = (user.nickname || user.userId || '?')[0].toUpperCase();
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Text style={styles.avatar}>👤</Text>
-        <Text style={styles.userId}>{user.userId}</Text>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initial}</Text>
+        </View>
+        <Text style={styles.nickname}>{user.nickname}</Text>
+        <Text style={styles.userId}>@{user.userId}</Text>
       </View>
 
-      <View style={styles.card}>
+      <View style={styles.body}>
         {editing ? (
-          <>
-            <Text style={styles.label}>닉네임</Text>
-            <TextInput
-              style={styles.input}
-              value={form.nickname}
-              onChangeText={(v) => setForm((p) => ({ ...p, nickname: v }))}
-            />
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>정보 수정</Text>
 
-            <Text style={styles.label}>여행 국가</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={form.travelDestination}
-                onValueChange={(v) => setForm((p) => ({ ...p, travelDestination: v }))}
-              >
-                {COUNTRIES.map((c) => <Picker.Item key={c} label={c} value={c} />)}
-              </Picker>
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>닉네임</Text>
+              <TextInput
+                style={styles.input}
+                value={form.nickname}
+                onChangeText={(v) => setForm((p) => ({ ...p, nickname: v }))}
+                placeholderTextColor={C.textMuted}
+              />
             </View>
 
-            <Text style={styles.label}>항공사</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={form.airline}
-                onValueChange={(v) => setForm((p) => ({ ...p, airline: v }))}
-              >
-                {AIRLINES.map((a) => <Picker.Item key={a} label={a} value={a} />)}
-              </Picker>
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>여행 국가</Text>
+              <View style={styles.pills}>
+                {COUNTRIES.map((c) => (
+                  <TouchableOpacity
+                    key={c}
+                    style={[styles.pill, form.travelDestination === c && styles.pillActive]}
+                    onPress={() => setForm((p) => ({ ...p, travelDestination: c }))}
+                  >
+                    <Text style={[styles.pillText, form.travelDestination === c && styles.pillTextActive]}>{c}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
 
-            <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleUpdate} disabled={loading}>
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>저장</Text>}
-              </TouchableOpacity>
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>항공사</Text>
+              <View style={styles.pills}>
+                {AIRLINES.map((a) => (
+                  <TouchableOpacity
+                    key={a}
+                    style={[styles.pill, form.airline === a && styles.pillActive]}
+                    onPress={() => setForm((p) => ({ ...p, airline: a }))}
+                  >
+                    <Text style={[styles.pillText, form.airline === a && styles.pillTextActive]}>{a}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.editBtns}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditing(false)}>
                 <Text style={styles.cancelBtnText}>취소</Text>
               </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleUpdate} disabled={loading}>
+                {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>저장</Text>}
+              </TouchableOpacity>
             </View>
-          </>
+          </View>
         ) : (
-          <>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>내 정보</Text>
             {[
               { label: '닉네임', value: user.nickname },
               { label: '여행 국가', value: user.travelDestination },
               { label: '항공사', value: user.airline },
-            ].map(({ label, value }) => (
-              <View key={label} style={styles.infoRow}>
+            ].map(({ label, value }, i, arr) => (
+              <View key={label} style={[styles.infoRow, i === arr.length - 1 && { borderBottomWidth: 0 }]}>
                 <Text style={styles.infoLabel}>{label}</Text>
                 <Text style={styles.infoValue}>{value}</Text>
               </View>
@@ -122,48 +141,72 @@ export default function ProfileScreen({ navigation }) {
             <TouchableOpacity style={styles.editBtn} onPress={() => setEditing(true)}>
               <Text style={styles.editBtnText}>정보 수정</Text>
             </TouchableOpacity>
-          </>
+          </View>
         )}
-      </View>
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Text style={styles.logoutText}>로그아웃</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Text style={styles.logoutText}>로그아웃</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { backgroundColor: '#4A90E2', alignItems: 'center', paddingVertical: 36 },
-  avatar: { fontSize: 60, marginBottom: 8 },
-  userId: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  card: {
-    backgroundColor: '#fff', margin: 16, borderRadius: 12,
-    padding: 20, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+  container: { flex: 1, backgroundColor: C.bg },
+  header: {
+    backgroundColor: '#1A1F36',
+    paddingTop: 56, paddingBottom: 32,
+    alignItems: 'center',
   },
-  label: { fontSize: 13, color: '#999', marginBottom: 4, marginTop: 12 },
-  pickerWrapper: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, marginBottom: 4 },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  infoLabel: { fontSize: 15, color: '#555' },
-  infoValue: { fontSize: 15, fontWeight: '600', color: '#222' },
+  avatar: {
+    width: 76, height: 76, borderRadius: 22,
+    backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
+    marginBottom: 14, ...shadow.md,
+  },
+  avatarText: { fontSize: 30, fontWeight: '800', color: '#fff' },
+  nickname: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 4 },
+  userId: { fontSize: 14, color: 'rgba(255,255,255,0.5)' },
+  body: { padding: 16 },
+  card: { backgroundColor: C.surface, borderRadius: 16, padding: 20, marginBottom: 12, ...shadow.sm },
+  cardTitle: { fontSize: 13, fontWeight: '700', color: C.textSec, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 16 },
+  infoRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.border,
+  },
+  infoLabel: { fontSize: 15, color: C.textSec },
+  infoValue: { fontSize: 15, fontWeight: '600', color: C.text },
   editBtn: {
-    marginTop: 16, backgroundColor: '#f0f6ff',
-    borderRadius: 8, padding: 14, alignItems: 'center',
+    marginTop: 16, backgroundColor: C.primaryLight,
+    borderRadius: 12, paddingVertical: 14, alignItems: 'center',
   },
-  editBtnText: { color: '#4A90E2', fontWeight: 'bold' },
-  buttonRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
-  saveBtn: { flex: 1, backgroundColor: '#4A90E2', borderRadius: 8, padding: 14, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontWeight: 'bold' },
-  cancelBtn: { flex: 1, backgroundColor: '#f0f0f0', borderRadius: 8, padding: 14, alignItems: 'center' },
-  cancelBtnText: { color: '#555', fontWeight: 'bold' },
-  logoutBtn: {
-    margin: 16, backgroundColor: '#fff', borderRadius: 12,
-    padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#e74c3c',
-  },
-  logoutText: { color: '#e74c3c', fontWeight: 'bold', fontSize: 15 },
+  editBtnText: { color: C.primary, fontWeight: '700', fontSize: 15 },
+  field: { marginBottom: 18 },
+  fieldLabel: { fontSize: 13, fontWeight: '600', color: C.textSec, marginBottom: 8 },
   input: {
-    borderWidth: 1, borderColor: '#ddd', borderRadius: 8,
-    padding: 12, fontSize: 15, marginBottom: 4,
+    backgroundColor: C.bg, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 13,
+    fontSize: 15, color: C.text, borderWidth: 1.5, borderColor: C.border,
   },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pill: {
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 999, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.bg,
+  },
+  pillActive: { backgroundColor: C.primary, borderColor: C.primary },
+  pillText: { fontSize: 13, color: C.textSec, fontWeight: '500' },
+  pillTextActive: { color: '#fff', fontWeight: '700' },
+  editBtns: { flexDirection: 'row', gap: 8, marginTop: 4 },
+  cancelBtn: {
+    flex: 1, backgroundColor: C.bg, borderRadius: 12,
+    paddingVertical: 14, alignItems: 'center', borderWidth: 1.5, borderColor: C.border,
+  },
+  cancelBtnText: { color: C.textSec, fontWeight: '600' },
+  saveBtn: { flex: 1, backgroundColor: C.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  saveBtnText: { color: '#fff', fontWeight: '700' },
+  logoutBtn: {
+    backgroundColor: C.surface, borderRadius: 16, paddingVertical: 17,
+    alignItems: 'center', borderWidth: 1.5, borderColor: '#FECACA', ...shadow.sm,
+  },
+  logoutText: { color: C.error, fontWeight: '700', fontSize: 15 },
 });

@@ -17,28 +17,54 @@ import TextAnalysisScreen from '../screens/ai/TextAnalysisScreen';
 import AnalysisResultScreen from '../screens/ai/AnalysisResultScreen';
 import BaggageScreen from '../screens/baggage/BaggageScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import { C } from '../constants/theme';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+const TAB_ICONS = {
+  Home:      { active: '⬛', inactive: '⬜', label: '홈' },
+  Community: { active: '💬', inactive: '💬', label: '커뮤니티' },
+  Camera:    { active: '📷', inactive: '📷', label: '물품분석' },
+  Baggage:   { active: '🧳', inactive: '🧳', label: '수하물' },
+  Profile:   { active: '👤', inactive: '👤', label: '내정보' },
+};
+
+function TabIcon({ name, focused }) {
+  const labels = {
+    Home: '홈', Community: '커뮤니티', Camera: '분석', Baggage: '수하물', Profile: '내정보',
+  };
+  const emojis = { Home: '🏠', Community: '💬', Camera: '🔍', Baggage: '🧳', Profile: '👤' };
+  return (
+    <View style={{ alignItems: 'center' }}>
+      <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>{emojis[name]}</Text>
+    </View>
+  );
+}
 
 function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => {
-          const icons = { Home: '🏠', Community: '💬', Camera: '📷', Baggage: '🧳', Profile: '👤' };
-          return <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>{icons[route.name]}</Text>;
-        },
+        tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
         tabBarLabel: ({ focused }) => {
-          const labels = { Home: '홈', Community: '커뮤니티', Camera: '물품분석', Baggage: '수하물', Profile: '내정보' };
+          const labels = { Home: '홈', Community: '커뮤니티', Camera: '분석', Baggage: '수하물', Profile: '내정보' };
           return (
-            <Text style={{ fontSize: 10, color: focused ? '#4A90E2' : '#999' }}>
+            <Text style={{
+              fontSize: 10, fontWeight: focused ? '700' : '500',
+              color: focused ? C.primary : '#9CA3AF',
+              marginTop: 2,
+            }}>
               {labels[route.name]}
             </Text>
           );
         },
         headerShown: false,
-        tabBarStyle: { paddingBottom: 4, height: 60 },
+        tabBarStyle: {
+          height: 64, paddingTop: 6, paddingBottom: 8,
+          borderTopWidth: 1, borderTopColor: '#E8EAF2',
+          backgroundColor: '#fff',
+        },
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
@@ -52,9 +78,16 @@ function MainTabs() {
 
 function CommunityStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: '#fff' },
+        headerShadowVisible: false,
+        headerTitleStyle: { fontWeight: '700', fontSize: 17, color: '#1A1F36' },
+        headerTintColor: C.primary,
+      }}
+    >
       <Stack.Screen name="PostList" component={PostListScreen} options={{ title: '커뮤니티' }} />
-      <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: '게시글' }} />
+      <Stack.Screen name="PostDetail" component={PostDetailScreen} options={{ title: '여행 후기' }} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} options={{ title: '글 작성' }} />
       <Stack.Screen name="EditPost" component={EditPostScreen} options={{ title: '게시글 수정' }} />
     </Stack.Navigator>
@@ -72,8 +105,11 @@ export default function AppNavigator() {
 
   if (!initialRoute) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color="#4A90E2" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F4F5F9' }}>
+        <View style={{ width: 48, height: 48, borderRadius: 13, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 18 }}>EP</Text>
+        </View>
+        <ActivityIndicator size="large" color={C.primary} />
       </View>
     );
   }
@@ -83,8 +119,28 @@ export default function AppNavigator() {
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Auth" component={AuthStack} />
         <Stack.Screen name="Main" component={MainTabs} />
-        <Stack.Screen name="TextAnalysis" component={TextAnalysisScreen} options={{ headerShown: true, title: '직접 입력' }} />
-        <Stack.Screen name="AnalysisResult" component={AnalysisResultScreen} options={{ headerShown: true, title: '분석 결과' }} />
+        <Stack.Screen
+          name="TextAnalysis"
+          component={TextAnalysisScreen}
+          options={{
+            headerShown: true, title: '물품 직접 검색',
+            headerStyle: { backgroundColor: '#fff' },
+            headerShadowVisible: false,
+            headerTitleStyle: { fontWeight: '700', color: '#1A1F36' },
+            headerTintColor: C.primary,
+          }}
+        />
+        <Stack.Screen
+          name="AnalysisResult"
+          component={AnalysisResultScreen}
+          options={{
+            headerShown: true, title: '분석 결과',
+            headerStyle: { backgroundColor: '#fff' },
+            headerShadowVisible: false,
+            headerTitleStyle: { fontWeight: '700', color: '#1A1F36' },
+            headerTintColor: C.primary,
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -94,7 +150,17 @@ function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: true, title: '회원가입' }} />
+      <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={{
+          headerShown: true, title: '회원가입',
+          headerStyle: { backgroundColor: '#F4F5F9' },
+          headerShadowVisible: false,
+          headerTitleStyle: { fontWeight: '700', color: '#1A1F36' },
+          headerTintColor: C.primary,
+        }}
+      />
     </Stack.Navigator>
   );
 }

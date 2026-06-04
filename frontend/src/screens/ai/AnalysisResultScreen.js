@@ -1,53 +1,100 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { C, shadow } from '../../constants/theme';
 
-const CATEGORY_CONFIG = {
-  '반입가능': { color: '#27AE60', bg: '#eafaf1', icon: '✅' },
-  '반입불가': { color: '#e74c3c', bg: '#fdf0ef', icon: '❌' },
-  '제한적반입': { color: '#F39C12', bg: '#fef9ec', icon: '⚠️' },
+const STATUS_CONFIG = {
+  '반입가능':  { color: C.success, bg: C.successBg, label: '반입 가능', icon: '✓', border: '#A7F3D0' },
+  '반입불가':  { color: C.error,   bg: C.errorBg,   label: '반입 불가', icon: '✕', border: '#FECACA' },
+  '제한적반입': { color: C.warning, bg: C.warningBg, label: '제한 반입', icon: '!', border: '#FDE68A' },
 };
 
 export default function AnalysisResultScreen({ route, navigation }) {
   const { result } = route.params;
-  const config = CATEGORY_CONFIG[result.category] || { color: '#888', bg: '#f5f5f5', icon: '❓' };
+  const cfg = STATUS_CONFIG[result.category] || { color: C.textSec, bg: C.bg, label: '확인 필요', icon: '?', border: C.border };
 
   return (
     <View style={styles.container}>
-      <View style={[styles.resultCard, { backgroundColor: config.bg }]}>
-        <Text style={styles.icon}>{config.icon}</Text>
-        <Text style={styles.item}>{result.item}</Text>
-        <Text style={[styles.category, { color: config.color }]}>{result.category}</Text>
-        <Text style={styles.explanation}>{result.explanation}</Text>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <View style={[styles.statusCard, { backgroundColor: cfg.bg, borderColor: cfg.border }]}>
+          <View style={[styles.iconCircle, { backgroundColor: cfg.color }]}>
+            <Text style={styles.iconText}>{cfg.icon}</Text>
+          </View>
+          <Text style={[styles.statusLabel, { color: cfg.color }]}>{cfg.label}</Text>
+          <Text style={styles.itemName}>{result.item}</Text>
+        </View>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Camera')}>
-        <Text style={styles.buttonText}>다른 물품 확인하기</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.outlineButton} onPress={() => navigation.navigate('TextAnalysis')}>
-        <Text style={styles.outlineButtonText}>직접 입력으로 다시 확인</Text>
-      </TouchableOpacity>
+        <View style={styles.explanationCard}>
+          <Text style={styles.explanationTitle}>상세 안내</Text>
+          <Text style={styles.explanation}>{result.explanation}</Text>
+        </View>
+
+        {result.country && (
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>여행 국가</Text>
+              <Text style={styles.infoValue}>{result.country}</Text>
+            </View>
+            {result.airline && (
+              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+                <Text style={styles.infoLabel}>항공사</Text>
+                <Text style={styles.infoValue}>{result.airline}</Text>
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
+
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.navigate('TextAnalysis')}>
+          <Text style={styles.btnOutlineText}>다시 검색</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.btnPrimary} onPress={() => navigation.navigate('Camera')}>
+          <Text style={styles.btnPrimaryText}>카메라로 확인</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5', padding: 24, justifyContent: 'center' },
-  resultCard: {
-    borderRadius: 20, padding: 32, alignItems: 'center',
-    marginBottom: 32, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, elevation: 4,
+  container: { flex: 1, backgroundColor: C.bg },
+  scroll: { padding: 20, paddingBottom: 40 },
+  statusCard: {
+    borderRadius: 24, padding: 32, alignItems: 'center',
+    marginBottom: 16, borderWidth: 1.5, ...shadow.sm,
   },
-  icon: { fontSize: 60, marginBottom: 16 },
-  item: { fontSize: 24, fontWeight: 'bold', color: '#222', marginBottom: 8 },
-  category: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
-  explanation: { fontSize: 15, color: '#555', textAlign: 'center', lineHeight: 24 },
-  button: {
-    backgroundColor: '#4A90E2', borderRadius: 12,
-    padding: 16, alignItems: 'center', marginBottom: 12,
+  iconCircle: {
+    width: 64, height: 64, borderRadius: 32,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  outlineButton: {
-    borderWidth: 1.5, borderColor: '#4A90E2', borderRadius: 12,
-    padding: 16, alignItems: 'center',
+  iconText: { color: '#fff', fontSize: 28, fontWeight: '800' },
+  statusLabel: { fontSize: 14, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
+  itemName: { fontSize: 26, fontWeight: '800', color: C.text, letterSpacing: -0.5 },
+  explanationCard: {
+    backgroundColor: C.surface, borderRadius: 16, padding: 20, marginBottom: 12, ...shadow.sm,
   },
-  outlineButtonText: { color: '#4A90E2', fontSize: 16, fontWeight: 'bold' },
+  explanationTitle: { fontSize: 13, fontWeight: '700', color: C.textSec, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  explanation: { fontSize: 15, color: C.textSec, lineHeight: 24 },
+  infoCard: { backgroundColor: C.surface, borderRadius: 16, overflow: 'hidden', ...shadow.sm },
+  infoRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: C.border,
+  },
+  infoLabel: { fontSize: 14, color: C.textSec },
+  infoValue: { fontSize: 14, fontWeight: '600', color: C.text },
+  actions: {
+    flexDirection: 'row', gap: 10, padding: 16,
+    backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.border,
+  },
+  btnOutline: {
+    flex: 1, borderRadius: 14, paddingVertical: 16,
+    alignItems: 'center', borderWidth: 1.5, borderColor: C.border,
+  },
+  btnOutlineText: { color: C.textSec, fontWeight: '700', fontSize: 15 },
+  btnPrimary: {
+    flex: 1, backgroundColor: C.primary,
+    borderRadius: 14, paddingVertical: 16, alignItems: 'center',
+  },
+  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });
