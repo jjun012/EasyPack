@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, ActivityIndicator, View, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import { Feather } from '@expo/vector-icons';
@@ -37,6 +38,7 @@ const TABS = [
 
 /* ── Custom frosted-glass tab bar ─────────────── */
 function CustomTabBar({ state, descriptors, navigation }) {
+  const { bottom: bottomInset } = useSafeAreaInsets();
   const press = (route, focused) => {
     const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
     if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
@@ -49,7 +51,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
 
   return (
     /* Outer wrap — NO overflow:hidden so FAB isn't clipped */
-    <View style={tabStyles.outerWrap} pointerEvents="box-none">
+    <View style={[tabStyles.outerWrap, { bottom: (bottomInset || 0) + (Platform.OS === 'ios' ? 20 : 14) }]} pointerEvents="box-none">
 
       {/* Pill bar (blur + border) — overflow:hidden only here */}
       <View style={tabStyles.pillShell}>
@@ -241,7 +243,6 @@ const tabStyles = StyleSheet.create({
   outerWrap: {
     position: 'absolute',
     left: 12, right: 12,
-    bottom: Platform.OS === 'ios' ? 20 : 14,
     height: OUTER_H,
   },
 
