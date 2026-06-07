@@ -111,8 +111,8 @@ REGULATION_CONTEXT = """
 
 def get_regulation_from_gemini(item: str, country: str, airline: str) -> dict:
     prompt = (
-        f"{REGULATION_CONTEXT}\n\n"
-        f"위 규정을 참고해서 '{item}'을(를) {country} 여행 시 {airline} 항공기에 가져갈 수 있는지 판단해줘.\n"
+        f"너는 항공 수하물 규정 전문가야. IATA 규정과 {airline}의 수하물 정책을 기반으로 "
+        f"'{item}'을(를) {country} 여행 시 기내 반입 및 위탁 수하물로 가져갈 수 있는지 판단해줘.\n"
         "반드시 아래 5줄 형식으로만 답해줘. 다른 말은 절대 하지 마:\n"
         "category: 반입가능 또는 반입불가 또는 제한적반입\n"
         "carry_on: 가능 또는 불가 또는 조건부\n"
