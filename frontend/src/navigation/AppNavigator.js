@@ -158,7 +158,16 @@ export default function AppNavigator() {
 
   useEffect(() => {
     AsyncStorage.getItem('accessToken').then((token) => {
-      setInitialRoute(token ? 'Main' : 'Auth');
+      if (!token) { setInitialRoute('Auth'); return; }
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const valid = payload.exp && payload.exp * 1000 > Date.now();
+        if (!valid) AsyncStorage.removeItem('accessToken');
+        setInitialRoute(valid ? 'Main' : 'Auth');
+      } catch {
+        AsyncStorage.removeItem('accessToken');
+        setInitialRoute('Auth');
+      }
     });
   }, []);
 
