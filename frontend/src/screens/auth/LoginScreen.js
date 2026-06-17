@@ -21,7 +21,7 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
     try {
       const res = await api.post('/api/auth/login', { user_id: userId, password });
-      await AsyncStorage.setItem('accessToken', res.accessToken);
+      await AsyncStorage.setItem('accessToken', res.token);
       await AsyncStorage.setItem('user', JSON.stringify(res.user));
       navigation.replace('Main');
     } catch (e) {
