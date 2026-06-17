@@ -41,7 +41,7 @@ export default function ProfileScreen({ navigation }) {
     try {
       await api.put('/api/auth/user/update', {
         nickname: form.nickname,
-        travel_destination: form.travelDestination,
+        travelDestination: form.travelDestination,
         airline: form.airline,
       });
       await loadUser();
