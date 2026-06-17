@@ -1,4 +1,5 @@
 import os
+import re
 import base64
 import psycopg2
 import google.generativeai as genai
@@ -109,6 +110,29 @@ REGULATION_CONTEXT = """
 """.strip()
 
 
+def _extract_field(key: str, text: str) -> str | None:
+    m = re.search(rf'(?:^|\n)\s*\**{re.escape(key)}\**\s*:\s*(.+)', text, re.MULTILINE | re.IGNORECASE)
+    return m.group(1).strip().strip('*').strip() if m else None
+
+
+def _normalize_category(raw: str) -> str:
+    raw = raw.replace(' ', '')
+    if '반입불가' in raw or '불가' in raw:
+        return '반입불가'
+    if '제한' in raw or '조건부' in raw:
+        return '제한적반입'
+    return '반입가능'
+
+
+def _normalize_slot(raw: str) -> str:
+    raw = raw.replace(' ', '')
+    if '불가' in raw:
+        return '불가'
+    if '조건' in raw or '제한' in raw:
+        return '조건부'
+    return '가능'
+
+
 def get_regulation_from_gemini(item: str, country: str, airline: str) -> dict:
     prompt = (
         f"너는 항공 수하물 규정 전문가야. IATA 규정과 {airline}의 수하물 정책을 기반으로 "
@@ -123,20 +147,24 @@ def get_regulation_from_gemini(item: str, country: str, airline: str) -> dict:
     response = model.generate_content(prompt)
     text = response.text.strip()
 
-    fields = {"category": "알 수 없음", "carry_on": "알 수 없음", "checked": "알 수 없음", "tags": "", "explanation": text}
-    for line in text.splitlines():
-        for key in fields:
-            if line.startswith(f"{key}:"):
-                fields[key] = line[len(key)+1:].strip()
+    raw_category    = _extract_field('category', text)
+    raw_carry_on    = _extract_field('carry_on', text)
+    raw_checked     = _extract_field('checked', text)
+    raw_tags        = _extract_field('tags', text) or ''
+    explanation     = _extract_field('explanation', text) or text
 
-    tags = [t.strip() for t in fields["tags"].split(",") if t.strip()]
+    category = _normalize_category(raw_category or '')
+    carry_on = _normalize_slot(raw_carry_on or '')
+    checked  = _normalize_slot(raw_checked or '')
+    tags     = [t.strip() for t in raw_tags.split(',') if t.strip()]
+
     return {
         "item":        item,
-        "category":    fields["category"],
-        "carry_on":    fields["carry_on"],
-        "checked":     fields["checked"],
+        "category":    category,
+        "carry_on":    carry_on,
+        "checked":     checked,
         "tags":        tags,
-        "explanation": fields["explanation"],
+        "explanation": explanation,
     }
 
 
